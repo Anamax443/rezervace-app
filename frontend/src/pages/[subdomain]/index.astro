@@ -1,0 +1,149 @@
+---
+export const prerender = false;
+// src/pages/index.astro
+import { supabase } from "../../lib/supabase";
+
+const path = Astro.url.pathname.split("/").filter(Boolean);
+const subdomain = path[0] || "novak";
+
+const { data: tenant } = await supabase
+  .from("tenants")
+  .select("id, nazev, logo_url")
+  .eq("subdomain", subdomain)
+  .eq("aktivni", true)
+  .single();
+
+const { data: akceRaw } = tenant
+  ? await supabase
+      .from("akce_obsazenost")
+      .select("*")
+      .eq("tenant_id", tenant.id)
+      .eq("aktivni", true)
+      .gte("datum", new Date().toISOString().split("T")[0])
+      .order("datum", { ascending: true })
+  : { data: [] };
+
+// Zpracuj logiku v frontmatter – vyhneme se problémům s < v JSX
+const akce = (akceRaw ?? []).map((a: any) => {
+  const volno: number = a.volno;
+  const plno = volno === 0;
+  const malo = volno > 0 && volno <= 3;
+  const volnoClass = plno ? "volno-plno" : malo ? "volno-malo" : "volno-ok";
+  const volnoText = plno
+    ? "⛔ Obsazeno"
+    : malo
+    ? `⚠ Poslední ${volno} místa`
+    : `✓ ${volno} volných míst`;
+  const datum = new Date(a.datum).toLocaleDateString("cs-CZ", {
+    weekday: "long", day: "numeric", month: "long", year: "numeric",
+  });
+  const casZac = a.cas_zacatek?.slice(0, 5) ?? "";
+  const casKon = a.cas_konec?.slice(0, 5) ?? "";
+  const imageUrl = a.image_path
+    ? `${import.meta.env.PUBLIC_SUPABASE_URL}/storage/v1/object/public/akce-obrazky/${a.image_path}/card.webp`
+    : null;
+  return { ...a, volno, plno, malo, volnoClass, volnoText, datum, casZac, casKon, imageUrl };
+});
+---
+
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{tenant?.nazev ?? "Rezervace"} – Akce</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0D0B10; color: #E8E8F0; min-height: 100vh; }
+    header { background: linear-gradient(180deg, #1A0A12 0%, #0D0B10 100%); border-bottom: 1px solid #2A1520; padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+    header h1 { font-family: Georgia, serif; font-size: 20px; color: #F5E6E8; }
+    .sub { font-size: 11px; color: #5A3A42; }
+    main { max-width: 680px; margin: 0 auto; padding: 32px 20px; }
+    .title { font-family: Georgia, serif; font-size: 28px; color: #F5E6E8; text-align: center; margin-bottom: 6px; }
+    .subtitle { text-align: center; color: #6B4A52; font-size: 13px; margin-bottom: 32px; }
+    .akce-list { display: flex; flex-direction: column; gap: 16px; }
+    .akce-card { background: #1A1015; border-radius: 14px; border: 1px solid #2A1520; overflow: hidden; transition: border-color 0.2s; }
+    .akce-card:hover { border-color: #8B1A2F; }
+    .akce-card.plno { opacity: 0.55; }
+    .akce-image { width: 100%; height: 180px; object-fit: cover; display: block; }
+    .akce-placeholder { height: 80px; background: linear-gradient(120deg, #2A0A1A 0%, transparent 70%); display: flex; align-items: center; padding: 0 20px; }
+    .akce-typ { font-size: 10px; color: #C0395A; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+    .akce-body { padding: 14px 20px 18px; }
+    .akce-nazev { font-family: Georgia, serif; font-size: 19px; color: #F5E6E8; margin-bottom: 8px; }
+    .akce-meta { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: #9B7A82; margin-bottom: 12px; }
+    .akce-footer { display: flex; justify-content: space-between; align-items: center; }
+    .akce-cena { font-family: Georgia, serif; font-size: 20px; color: #F5E6E8; font-weight: 700; }
+    .akce-volno { font-size: 12px; font-weight: 600; }
+    .volno-ok { color: #6B8C52; }
+    .volno-malo { color: #FFC107; }
+    .volno-plno { color: #F44336; }
+    .btn { padding: 9px 22px; background: linear-gradient(135deg, #8B1A2F 0%, #C0395A 100%); border: none; border-radius: 8px; color: #fff; font-size: 13px; font-weight: 600; text-decoration: none; display: inline-block; }
+    .prazdno { text-align: center; padding: 60px 20px; color: #6B4A52; }
+    .not-found { text-align: center; padding: 80px 20px; }
+  </style>
+</head>
+<body>
+
+{tenant && (
+  <header>
+    <div style="font-size:28px">🍷</div>
+    <div>
+      <h1>{tenant.nazev}</h1>
+      <div class="sub">{subdomain}.rezervace-app.pages.dev</div>
+    </div>
+  </header>
+)}
+
+{tenant && (
+  <main>
+    <h2 class="title">Nadcházející akce</h2>
+    <p class="subtitle">Rezervujte si místo online</p>
+
+    {akce.length > 0 ? (
+      <div class="akce-list">
+        {akce.map((a) => (
+          <div class={`akce-card${a.plno ? " plno" : ""}`}>
+            {a.imageUrl
+              ? <img class="akce-image" src={a.imageUrl} alt={a.nazev} />
+              : <div class="akce-placeholder"><span class="akce-typ">{a.typ}</span></div>
+            }
+            <div class="akce-body">
+              {a.imageUrl && <div class="akce-typ" style="margin-bottom:6px">{a.typ}</div>}
+              <div class="akce-nazev">{a.nazev}</div>
+              <div class="akce-meta">
+                <span>📅 {a.datum}</span>
+                <span>🕐 {a.casZac}{a.casKon ? ` – ${a.casKon}` : ""}</span>
+                {a.ma_sezeni && <span>💺 sezení</span>}
+              </div>
+              <div class="akce-footer">
+                <div>
+                  <div class="akce-cena">{a.cena} Kč</div>
+                  <div class={`akce-volno ${a.volnoClass}`}>{a.volnoText}</div>
+                </div>
+                {!a.plno && (
+                  <a href={`/${subdomain}/akce/${a.id}`} class="btn">Rezervovat →</a>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    ) : (
+      <div class="prazdno">
+        <div style="font-size:40px;margin-bottom:12px">🎭</div>
+        <div>Momentálně nejsou žádné nadcházející akce.</div>
+      </div>
+    )}
+  </main>
+)}
+
+{!tenant && (
+  <div class="not-found">
+    <div style="font-size:48px;margin-bottom:16px">🔍</div>
+    <h2 style="color:#F5E6E8">Stránka nenalezena</h2>
+    <p style="color:#6B4A52;margin-top:8px">Tenant "{subdomain}" neexistuje nebo není aktivní.</p>
+  </div>
+)}
+
+</body>
+</html>

@@ -1,0 +1,209 @@
+---
+export const prerender = false;
+import { supabase } from "../../../lib/supabase";
+
+const { subdomain, id } = Astro.params;
+
+// Načti akci
+const { data: akce } = await supabase
+  .from("akce_obsazenost")
+  .select("*")
+  .eq("id", id)
+  .eq("aktivni", true)
+  .single();
+
+// Načti tenant
+const { data: tenant } = akce
+  ? await supabase
+      .from("tenants")
+      .select("id, nazev, fio_ucet")
+      .eq("id", akce.tenant_id)
+      .single()
+  : { data: null };
+
+if (!akce || !tenant) {
+  return Astro.redirect(`/${subdomain}`);
+}
+
+const formatDatum = (datum: string) =>
+  new Date(datum).toLocaleDateString("cs-CZ", {
+    weekday: "long", day: "numeric", month: "long", year: "numeric",
+  });
+
+const casZac = akce.cas_zacatek?.slice(0, 5) ?? "";
+const casKon = akce.cas_konec?.slice(0, 5) ?? "";
+const volno: number = akce.volno;
+const plno = volno === 0;
+---
+
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{akce.nazev} – {tenant.nazev}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0D0B10; color: #E8E8F0; min-height: 100vh; }
+    header { background: linear-gradient(180deg, #1A0A12 0%, #0D0B10 100%); border-bottom: 1px solid #2A1520; padding: 14px 24px; display: flex; align-items: center; gap: 12px; }
+    header a { color: #C0395A; text-decoration: none; font-size: 13px; }
+    header h1 { font-family: Georgia, serif; font-size: 18px; color: #F5E6E8; }
+    main { max-width: 640px; margin: 0 auto; padding: 32px 20px; }
+    .akce-typ { font-size: 10px; color: #C0395A; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .akce-nazev { font-family: Georgia, serif; font-size: 28px; color: #F5E6E8; margin-bottom: 16px; line-height: 1.3; }
+    .akce-meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 13px; color: #9B7A82; margin-bottom: 20px; }
+    .akce-popis { font-size: 15px; color: #C0A0A8; line-height: 1.7; margin-bottom: 28px; border-left: 2px solid #2A1520; padding-left: 16px; }
+    .divider { border: none; border-top: 1px solid #2A1520; margin: 28px 0; }
+    .form-title { font-family: Georgia, serif; font-size: 20px; color: #F5E6E8; margin-bottom: 20px; }
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-size: 12px; color: #9B7A82; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    input, select { width: 100%; padding: 10px 14px; background: #1A1015; border: 1px solid #2A1520; border-radius: 8px; color: #E8E8F0; font-size: 15px; outline: none; }
+    input:focus, select:focus { border-color: #8B1A2F; }
+    .cena-box { background: #1A1015; border: 1px solid #2A1520; border-radius: 10px; padding: 16px; margin: 20px 0; display: flex; justify-content: space-between; align-items: center; }
+    .cena-label { font-size: 12px; color: #9B7A82; }
+    .cena-value { font-family: Georgia, serif; font-size: 24px; color: #F5E6E8; font-weight: 700; }
+    .btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #8B1A2F 0%, #C0395A 100%); border: none; border-radius: 10px; color: #fff; font-size: 16px; font-weight: 600; cursor: pointer; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .volno-info { font-size: 13px; color: #6B8C52; margin-bottom: 16px; }
+    .plno-info { font-size: 13px; color: #F44336; margin-bottom: 16px; }
+    .success { background: #0A1F0A; border: 1px solid #2A4A2A; border-radius: 10px; padding: 20px; text-align: center; display: none; }
+    .success h3 { color: #6B8C52; font-family: Georgia, serif; margin-bottom: 8px; }
+    .success p { color: #9B7A82; font-size: 14px; }
+    .error-msg { color: #F44336; font-size: 13px; margin-top: 12px; display: none; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <a href={`/${subdomain}`}>← {tenant.nazev}</a>
+    <h1>{akce.nazev}</h1>
+  </div>
+</header>
+
+<main>
+  <div class="akce-typ">{akce.typ}</div>
+  <div class="akce-nazev">{akce.nazev}</div>
+  <div class="akce-meta">
+    <span>📅 {formatDatum(akce.datum)}</span>
+    <span>🕐 {casZac}{casKon ? ` – ${casKon}` : ""}</span>
+    {akce.ma_sezeni && <span>💺 sezení</span>}
+    <span>🎟 {akce.kapacita} míst celkem</span>
+  </div>
+  {akce.popis && <div class="akce-popis">{akce.popis}</div>}
+
+  <hr class="divider" />
+
+  {plno ? (
+    <div class="plno-info">⛔ Tato akce je plně obsazena.</div>
+  ) : (
+    <div>
+      <h2 class="form-title">Rezervace místa</h2>
+      <div class="volno-info">✓ {volno} volných míst</div>
+
+      <div class="form-group">
+        <label>Jméno (volitelné)</label>
+        <input type="text" id="jmeno" placeholder="Jan Novák" />
+      </div>
+      <div class="form-group">
+        <label>Email *</label>
+        <input type="email" id="email" placeholder="jan@email.cz" required />
+      </div>
+      <div class="form-group">
+        <label>Počet míst *</label>
+        <select id="pocet">
+          {Array.from({ length: Math.min(volno, 10) }, (_, i) => i + 1).map(n => (
+            <option value={n}>{n} {n === 1 ? "místo" : n < 5 ? "místa" : "míst"}</option>
+          ))}
+        </select>
+      </div>
+
+      <div class="cena-box">
+        <div>
+          <div class="cena-label">Celková cena</div>
+          <div class="cena-value" id="celkova-cena">{akce.cena} Kč</div>
+        </div>
+        <div style="font-size:12px;color:#6B4A52">{akce.cena} Kč / os.</div>
+      </div>
+
+      <button class="btn" id="btn-rezervovat">Rezervovat a zaplatit →</button>
+      <div class="error-msg" id="error-msg"></div>
+
+      <div class="success" id="success">
+        <h3>✓ Rezervace přijata!</h3>
+        <p>Na váš email jsme odeslali platební instrukce.<br/>Po přijetí platby obdržíte vstupenku s QR kódem.</p>
+      </div>
+    </div>
+  )}
+</main>
+
+<script define:vars={{ akceId: akce.id, tenantId: tenant.id, cenaPorOs: akce.cena }}>
+  const pocetEl = document.getElementById("pocet");
+  const celkovaEl = document.getElementById("celkova-cena");
+  const btnEl = document.getElementById("btn-rezervovat");
+  const errorEl = document.getElementById("error-msg");
+  const successEl = document.getElementById("success");
+
+  if (pocetEl) {
+    pocetEl.addEventListener("change", () => {
+      const n = parseInt(pocetEl.value);
+      if (celkovaEl) celkovaEl.textContent = `${n * cenaPorOs} Kč`;
+    });
+  }
+
+  if (btnEl) {
+    btnEl.addEventListener("click", async () => {
+      const email = document.getElementById("email").value.trim();
+      const jmeno = document.getElementById("jmeno").value.trim();
+      const pocet = parseInt(pocetEl.value);
+
+      if (!email) {
+        errorEl.textContent = "Zadejte prosím email.";
+        errorEl.style.display = "block";
+        return;
+      }
+
+      btnEl.disabled = true;
+      btnEl.textContent = "Odesílám...";
+      errorEl.style.display = "none";
+
+      try {
+        const res = await fetch("https://rezervace.maxferit.workers.dev/rezervace", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            akce_id: akceId,
+            tenant_id: tenantId,
+            email,
+            jmeno: jmeno || undefined,
+            pocet_mist: pocet,
+          }),
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          btnEl.style.display = "none";
+          pocetEl.closest(".form-group").style.display = "none";
+          document.getElementById("jmeno").closest(".form-group").style.display = "none";
+          document.getElementById("email").closest(".form-group").style.display = "none";
+          document.querySelector(".cena-box").style.display = "none";
+          successEl.style.display = "block";
+        } else {
+          errorEl.textContent = data.error || "Nastala chyba. Zkuste to prosím znovu.";
+          errorEl.style.display = "block";
+          btnEl.disabled = false;
+          btnEl.textContent = "Rezervovat a zaplatit →";
+        }
+      } catch {
+        errorEl.textContent = "Nepodařilo se odeslat rezervaci. Zkontrolujte připojení.";
+        errorEl.style.display = "block";
+        btnEl.disabled = false;
+        btnEl.textContent = "Rezervovat a zaplatit →";
+      }
+    });
+  }
+</script>
+
+</body>
+</html>
