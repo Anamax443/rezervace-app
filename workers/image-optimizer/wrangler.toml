@@ -1,0 +1,8 @@
+name = "image-optimizer"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+[vars]
+SUPABASE_URL = "https://arcutrsftxarurghmtqj.supabase.co"
+
+# Nastav přes: npx wrangler secret put SUPABASE_SERVICE_KEY
