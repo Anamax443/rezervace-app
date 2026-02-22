@@ -85,7 +85,7 @@
     const ADMIN_API_URL = "https://admin-api.bass443.workers.dev";
     function getToken() { const t = localStorage.getItem("sb_token"); if (!t) { window.location.href = "/login"; return null; } return t; }
     function logout() { localStorage.clear(); window.location.href = "/login"; }
-    function getLocale() { return window.getLang() === "en" ? "en-GB" : "cs-CZ"; }
+    function getLocale() { return window.getLang() === "en" ? "en-GB" : locale; }
 
     async function init() {
       const user = JSON.parse(localStorage.getItem("sb_user") || "{}");
@@ -106,7 +106,7 @@
           <td style="color:#94a3b8">${t.subdomain}</td>
           <td style="color:#94a3b8">${t.plan}</td>
           <td><span class="status ${t.plan_status}">${t.plan_status}</span></td>
-          <td><span class="dot ${t.aktivni ? 'on' : 'off'}"></span>${t.aktivni ? 'Ano' : 'Ne'}</td>
+          <td><span class="dot ${t.aktivni ? 'on' : 'off'}"></span>${t.aktivni ? yesText : noText}</td>
           <td style="color:#64748b">${t.plan_expirace ? new Date(t.plan_expirace).toLocaleDateString(locale) : "�"}</td>
           <td style="color:#64748b">${new Date(t.created_at).toLocaleDateString(locale)}</td>
         </tr>

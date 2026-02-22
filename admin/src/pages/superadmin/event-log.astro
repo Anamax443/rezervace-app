@@ -93,7 +93,7 @@
       btn.classList.add("active");
       loadLogs();
     }
-    function getLocale() { return window.getLang() === "en" ? "en-GB" : "cs-CZ"; }
+    function getLocale() { return window.getLang() === "en" ? "en-GB" : getLocale(); }
 
     async function loadLogs() {
       const token = getToken();
