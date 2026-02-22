@@ -1,5 +1,16 @@
 import { verifyAuth, requireSuperadmin, requireAdmin, jsonResponse, type Env } from "./auth";
 const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS", "Access-Control-Allow-Headers": "Content-Type, Authorization" };
+
+async function testService(name: string, testFn: () => Promise<any>): Promise<{ name: string; status: string; latency: number; detail: string }> {
+  const start = Date.now();
+  try {
+    const result = await testFn();
+    return { name, status: "ok", latency: Date.now() - start, detail: result || "OK" };
+  } catch (e: any) {
+    return { name, status: "error", latency: Date.now() - start, detail: e.message || String(e) };
+  }
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
@@ -14,6 +25,57 @@ export default {
       const roleCheck = requireSuperadmin(user);
       if (roleCheck) return new Response(JSON.stringify({ error: roleCheck.error }), { status: roleCheck.status, headers: { ...cors, "Content-Type": "application/json" } });
       const sbHeaders = { "Authorization": `Bearer ${env.SUPABASE_SERVICE_KEY}`, "apikey": env.SUPABASE_SERVICE_KEY };
+
+      if (path === "/superadmin/system-check") {
+        const results = await Promise.all([
+          testService("supabase_db", async () => {
+            const res = await fetch(`${env.SUPABASE_URL}/rest/v1/tenants?select=id&limit=1`, { headers: sbHeaders });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return `HTTP ${res.status} - DB dostupna`;
+          }),
+          testService("supabase_auth", async () => {
+            const res = await fetch(`${env.SUPABASE_URL}/auth/v1/settings`, { headers: { "apikey": env.SUPABASE_SERVICE_KEY } });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return `HTTP ${res.status} - Auth dostupny`;
+          }),
+          testService("resend", async () => {
+            if (!env.RESEND_API_KEY) throw new Error("RESEND_API_KEY neni nastaven");
+            const res = await fetch("https://api.resend.com/api-keys", { headers: { "Authorization": `Bearer ${env.RESEND_API_KEY}` } });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return `HTTP ${res.status} - Resend dostupny`;
+          }),
+          testService("fio_platform", async () => {
+            if (!env.FIO_PLATFORM_TOKEN) throw new Error("FIO_PLATFORM_TOKEN neni nastaven");
+            const today = new Date().toISOString().slice(0, 10);
+            const res = await fetch(`https://fioapi.fio.cz/v1/rest/periods/${env.FIO_PLATFORM_TOKEN}/${today}/${today}/transactions.json`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return `HTTP ${res.status} - Fio dostupne`;
+          }),
+          testService("worker_fio_polling", async () => {
+            const res = await fetch("https://fio-polling.bass443.workers.dev/health");
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return `HTTP ${res.status} - Worker dostupny`;
+          }),
+          testService("worker_fio_billing", async () => {
+            const res = await fetch("https://fio-billing.bass443.workers.dev/health");
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return `HTTP ${res.status} - Worker dostupny`;
+          }),
+          testService("worker_rezervace", async () => {
+            const res = await fetch("https://rezervace.bass443.workers.dev/health");
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return `HTTP ${res.status} - Worker dostupny`;
+          }),
+          testService("worker_image_optimizer", async () => {
+            const res = await fetch("https://image-optimizer.bass443.workers.dev/health");
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return `HTTP ${res.status} - Worker dostupny`;
+          }),
+        ]);
+        const allOk = results.every(r => r.status === "ok");
+        return new Response(JSON.stringify({ overall: allOk ? "ok" : "degraded", timestamp: new Date().toISOString(), services: results }), { headers: { ...cors, "Content-Type": "application/json" } });
+      }
+
       if (path === "/superadmin/tenants") {
         const res = await fetch(`${env.SUPABASE_URL}/rest/v1/tenants?select=id,nazev,subdomain,plan,plan_status,plan_expirace,aktivni,created_at&order=created_at.desc`, { headers: sbHeaders });
         return new Response(await res.text(), { status: res.status, headers: { ...cors, "Content-Type": "application/json" } });

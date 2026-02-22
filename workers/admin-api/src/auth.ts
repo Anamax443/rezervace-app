@@ -9,6 +9,8 @@ export interface Env {
   SUPABASE_URL: string;
   SUPABASE_SERVICE_KEY: string;
   INTERNAL_AUTH_TOKEN: string;
+  RESEND_API_KEY: string;
+  FIO_PLATFORM_TOKEN: string;
 }
 
 export async function verifyAuth(request: Request, env: Env): Promise<{ user: AuthUser } | { error: string; status: number }> {
