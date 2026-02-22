@@ -1,0 +1,114 @@
+---
+---
+<!DOCTYPE html>
+<html lang="cs">
+<head><meta charset='UTF-8'>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Uživatelé | Rezervace Admin</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #0f172a; color: #f1f5f9; }
+    .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 240px; background: #1e293b; border-right: 1px solid #334155; padding: 1.5rem 0; }
+    .logo { padding: 0 1.5rem 1.5rem; border-bottom: 1px solid #334155; font-weight: 700; font-size: 1.1rem; }
+    .logo span { color: #6366f1; }
+    nav a { display: flex; align-items: center; gap: 0.75rem; padding: 0.625rem 1.5rem; color: #94a3b8; text-decoration: none; font-size: 0.9rem; }
+    nav a:hover, nav a.active { color: #f1f5f9; background: #334155; }
+    nav a.active { border-right: 2px solid #6366f1; }
+    .main { margin-left: 240px; padding: 2rem; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+    .header h1 { font-size: 1.5rem; }
+    .user-info { color: #94a3b8; font-size: 0.875rem; display: flex; align-items: center; gap: 1rem; }
+    .badge { background: #6366f1; color: white; padding: 0.2rem 0.6rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; }
+    .logout { color: #94a3b8; cursor: pointer; background: none; border: 1px solid #334155; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.8rem; }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 1.5rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    th { text-align: left; color: #64748b; font-weight: 500; padding: 0.5rem 0.75rem; border-bottom: 1px solid #334155; }
+    td { padding: 0.625rem 0.75rem; border-bottom: 1px solid #1a2535; }
+    tr:hover td { background: #263348; }
+    .role { padding: 0.2rem 0.6rem; border-radius: 99px; font-size: 0.75rem; font-weight: 500; }
+    .role.superadmin { background: #4c1d95; color: #c4b5fd; }
+    .role.admin { background: #1e3a5f; color: #60a5fa; }
+    .role.keyuser { background: #14532d; color: #4ade80; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+    .dot.on { background: #4ade80; }
+    .dot.off { background: #f87171; }
+  </style>
+<script src="/lang.js" is:inline></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="logo">Rezervace <span>Admin</span></div>
+        <nav>
+      <a href="/superadmin">📊 <span data-i18n="dashboard">Dashboard</span></a>
+      <a href="/superadmin/tenants">🏢 <span data-i18n="tenants">Tenanti</span></a>
+      <a href="/superadmin/users" class="active">👥 <span data-i18n="users">Uživatelé</span></a>
+      <a href="/superadmin/event-log">📋 <span data-i18n="eventLog">Event Log</span></a>
+    </nav>
+  </aside>
+  <main class="main">
+    <div class="header">
+      <h1 data-i18n="users">Uživatelé</h1>
+      <div class="user-info">
+        <span id="user-email"></span>
+        <span class="badge">superadmin</span>
+                <div style="position:relative;display:inline-block;">
+        <button id="lang-btn" style="background:#334155;border:none;cursor:pointer;color:#f1f5f9;padding:0.3rem 0.8rem;border-radius:4px;font-size:0.8rem;font-weight:600;" onclick="document.getElementById('lang-menu').style.display=document.getElementById('lang-menu').style.display==='block'?'none':'block'">CS &#9660;</button>
+        <div id="lang-menu" style="display:none;position:absolute;right:0;top:110%;background:#1e293b;border:1px solid #334155;border-radius:6px;min-width:80px;z-index:100;">
+          <div onclick="setLang('cs');document.getElementById('lang-menu').style.display='none'" style="padding:0.5rem 1rem;cursor:pointer;color:#f1f5f9;font-size:0.85rem;">CS</div>
+          <div onclick="setLang('en');document.getElementById('lang-menu').style.display='none'" style="padding:0.5rem 1rem;cursor:pointer;color:#f1f5f9;font-size:0.85rem;">EN</div>
+        </div>
+      </div>
+        <button class="logout" onclick="logout()" data-i18n="logout">Odhlásit</button>
+      </div>
+    </div>
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th data-i18n="email">Email</th>
+            <th data-i18n="role">Role</th>
+            <th data-i18n="tenant">Tenant</th>
+            <th data-i18n="isActive">Aktivní</th>
+            <th data-i18n="expiration">Expirace</th>
+            <th data-i18n="created">Vytvořen</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"><tr><td colspan="6" style="color:#64748b" data-i18n="loading">Načítám...</td></tr></tbody>
+      </table>
+    </div>
+  </main>
+  <script>
+    const ADMIN_API_URL = "https://admin-api.bass443.workers.dev";
+    function getToken() { const t = localStorage.getItem("sb_token"); if (!t) { window.location.href = "/login"; return null; } return t; }
+    function logout() { localStorage.clear(); window.location.href = "/login"; }
+    function getLocale() { return window.getLang() === "en" ? "en-GB" : "cs-CZ"; }
+
+    async function init() {
+      const user = JSON.parse(localStorage.getItem("sb_user") || "{}");
+      if (user.role !== "superadmin") { window.location.href = "/login"; return; }
+      document.getElementById("user-email").textContent = user.email || "";
+      const token = getToken();
+      const res = await fetch(`${ADMIN_API_URL}/superadmin/users`, { headers: { "Authorization": `Bearer ${token}` } });
+      if (!res.ok) { window.location.href = "/login"; return; }
+      const users = await res.json();
+      const tbody = document.getElementById("tbody");
+      if (!users.length) { tbody.innerHTML = "<tr><td colspan='6' style='color:#64748b'>" + window.t('noUsers') + "</td></tr>"; return; }
+      const locale = getLocale();
+      const yesText = window.t("yes");
+      const noText = window.t("no");
+      tbody.innerHTML = users.map(u => `
+        <tr>
+          <td>${u.email || "�"}</td>
+          <td><span class="role ${u.role}">${u.role}</span></td>
+          <td style="color:#94a3b8">${u.tenant_id ? u.tenant_id.slice(0,8)+"..." : "�"}</td>
+          <td><span class="dot ${u.aktivni ? 'on' : 'off'}"></span>${u.aktivni ? "Ano" : "Ne"}</td>
+          <td style="color:#64748b">${u.expires_at ? new Date(u.expires_at).toLocaleDateString(locale) : "�"}</td>
+          <td style="color:#64748b">${new Date(u.created_at).toLocaleDateString(locale)}</td>
+        </tr>
+      `).join("");
+    }
+    init();
+  </script>
+</body>
+</html>
