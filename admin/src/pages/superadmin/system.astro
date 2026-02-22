@@ -69,7 +69,7 @@
       </div>
     </div>
     <div class="card">
-      <button class="btn" id="check-btn" onclick="runCheck()" data-i18n="runCheck">Spustit kontrolu</button>
+      <button class="btn" id="check-btn" data-i18n="runCheck">Spustit kontrolu</button>
       <div id="overall" style="margin-top:1rem;display:none;"></div>
       <div id="timestamp" class="timestamp"></div>
     </div>
@@ -142,6 +142,7 @@
       if (user.role !== "superadmin") { window.location.href = "/login"; return; }
       document.getElementById("user-email").textContent = user.email || "";
     })();
+    document.getElementById("check-btn").addEventListener("click", runCheck);
   </script>
 </body>
 </html>

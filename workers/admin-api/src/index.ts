@@ -73,7 +73,20 @@ export default {
           }),
         ]);
         const allOk = results.every(r => r.status === "ok");
-        return new Response(JSON.stringify({ overall: allOk ? "ok" : "degraded", timestamp: new Date().toISOString(), services: results }), { headers: { ...cors, "Content-Type": "application/json" } });
+        // Log do event_log
+        const failed = results.filter(r => r.status !== "ok").map(r => r.name);
+        const logKategorie = allOk ? "information" : "warning";
+        const logZprava = allOk
+          ? "System check OK: vsechny sluzby dostupne (" + results.length + "/" + results.length + ")"
+          : "System check: " + (results.length - failed.length) + "/" + results.length + " OK, problem: " + failed.join(", ");
+        const logRes = await fetch(env.SUPABASE_URL + "/rest/v1/event_log", {
+          method: "POST",
+          headers: { ...sbHeaders, "Content-Type": "application/json", "Prefer": "return=minimal" },
+          body: JSON.stringify({ kategorie: logKategorie, zdroj: "system-check", zprava: logZprava, detail: JSON.stringify(results), tenant_id: null }),
+        });
+        const logStatus = logRes.status;
+        const logError = logRes.ok ? null : await logRes.text();
+        return new Response(JSON.stringify({ overall: allOk ? "ok" : "degraded", timestamp: new Date().toISOString(), services: results, log_status: logStatus, log_error: logError }), { headers: { ...cors, "Content-Type": "application/json" } });
       }
 
       if (path === "/superadmin/tenants") {

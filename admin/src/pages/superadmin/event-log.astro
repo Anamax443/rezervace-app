@@ -38,7 +38,8 @@
     .zprava { max-width: 400px; word-break: break-word; }
     .detail { color: #64748b; font-size: 0.75rem; margin-top: 2px; }
   </style>
-<script src="/lang.js" is:inline></script>
+<script src="/lang.js" is:inline>    document.getElementById("logout-btn").addEventListener("click", logout);
+  </script>
 </head>
 <body>
   <aside class="sidebar">
@@ -48,6 +49,7 @@
       <a href="/superadmin/tenants">🏢 <span data-i18n="tenants">Tenanti</span></a>
       <a href="/superadmin/users">👥 <span data-i18n="users">Uživatelé</span></a>
       <a href="/superadmin/event-log" class="active">📋 <span data-i18n="eventLog">Event Log</span></a>
+      <a href="/superadmin/system">⚙️ <span data-i18n="systemCheck">Stav systému</span></a>
     </nav>
   </aside>
   <main class="main">
@@ -63,15 +65,15 @@
           <div onclick="setLang('en');document.getElementById('lang-menu').style.display='none'" style="padding:0.5rem 1rem;cursor:pointer;color:#f1f5f9;font-size:0.85rem;">EN</div>
         </div>
       </div>
-        <button class="logout" onclick="logout()" data-i18n="logout">Odhlásit</button>
+        <button class="logout" id="logout-btn" data-i18n="logout">Odhlásit</button>
       </div>
     </div>
     <div class="filters">
-      <button class="filter-btn active" onclick="setFilter(null, this)" data-i18n="all">Vše</button>
-      <button class="filter-btn" onclick="setFilter('information', this)">🔵 Information</button>
-      <button class="filter-btn" onclick="setFilter('warning', this)">🟡 Warning</button>
-      <button class="filter-btn" onclick="setFilter('error', this)">🔴 Error</button>
-      <button class="filter-btn" onclick="setFilter('critical', this)">⛔ Critical</button>
+      <button class="filter-btn active" data-filter="all" data-i18n="all">Vše</button>
+      <button class="filter-btn" data-filter="information">🔵 Information</button>
+      <button class="filter-btn" data-filter="warning">🟡 Warning</button>
+      <button class="filter-btn" data-filter="error">🔴 Error</button>
+      <button class="filter-btn" data-filter="critical">⛔ Critical</button>
     </div>
     <div class="card">
       <table>
@@ -93,7 +95,13 @@
       btn.classList.add("active");
       loadLogs();
     }
-    function getLocale() { return window.getLang() === "en" ? "en-GB" : getLocale(); }
+    document.querySelectorAll("[data-filter]").forEach(function(btn) {
+      btn.addEventListener("click", function() {
+        var f = btn.getAttribute("data-filter");
+        setFilter(f === "all" ? null : f, btn);
+      });
+    });
+    function getLocale() { return window.getLang() === "en" ? "en-GB" : "cs-CZ"; }
 
     async function loadLogs() {
       const token = getToken();
@@ -120,6 +128,7 @@
       await loadLogs();
     }
     init();
+      document.getElementById("logout-btn").addEventListener("click", logout);
   </script>
 </body>
 </html>

@@ -53,6 +53,7 @@
       <a href="/superadmin/tenants">🏢 <span data-i18n="tenants">Tenanti</span></a>
       <a href="/superadmin/users">👥 <span data-i18n="users">Uživatelé</span></a>
       <a href="/superadmin/event-log">📋 <span data-i18n="eventLog">Event Log</span></a>
+      <a href="/superadmin/system">⚙️ <span data-i18n="systemCheck">Stav systému</span></a>
     </nav>
   </aside>
   <main class="main">
@@ -110,7 +111,7 @@
       window.location.href = "/login";
     }
 
-    function getLocale() { return window.getLang() === "en" ? "en-GB" : getLocale(); }
+    function getLocale() { return window.getLang() === "en" ? "en-GB" : "cs-CZ"; }
 
     async function init() {
       const user = JSON.parse(localStorage.getItem("sb_user") || "{}");
