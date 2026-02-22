@@ -35,6 +35,14 @@ export const translations = {
   yes: 'Ano',
   no: 'Ne',
   language: 'Jazyk',
+  systemCheck: 'Stav systému',
+  runCheck: 'Spustit kontrolu',
+  running: 'Kontroluji...',
+  service: 'Služba',
+  latency: 'Latence',
+  detail: 'Detail',
+  overallOk: 'Všechny služby fungují',
+  overallDegraded: 'Některé služby mají problém',
   },
   en: {
   dashboard: 'Dashboard',
@@ -72,6 +80,14 @@ export const translations = {
   yes: 'Yes',
   no: 'No',
   language: 'Language',
+  systemCheck: 'System Status',
+  runCheck: 'Run Check',
+  running: 'Checking...',
+  service: 'Service',
+  latency: 'Latency',
+  detail: 'Detail',
+  overallOk: 'All services operational',
+  overallDegraded: 'Some services have issues',
   }
 };
 

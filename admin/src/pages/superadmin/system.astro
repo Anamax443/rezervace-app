@@ -1,0 +1,147 @@
+---
+---
+<!DOCTYPE html>
+<html lang="cs">
+<head><meta charset='UTF-8'>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stav systému | Rezervace Admin</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #0f172a; color: #f1f5f9; }
+    .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 240px; background: #1e293b; border-right: 1px solid #334155; padding: 1.5rem 0; }
+    .logo { padding: 0 1.5rem 1.5rem; border-bottom: 1px solid #334155; font-weight: 700; font-size: 1.1rem; }
+    .logo span { color: #6366f1; }
+    nav a { display: flex; align-items: center; gap: 0.75rem; padding: 0.625rem 1.5rem; color: #94a3b8; text-decoration: none; font-size: 0.9rem; }
+    nav a:hover, nav a.active { color: #f1f5f9; background: #334155; }
+    nav a.active { border-right: 2px solid #6366f1; }
+    .main { margin-left: 240px; padding: 2rem; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+    .header h1 { font-size: 1.5rem; }
+    .user-info { color: #94a3b8; font-size: 0.875rem; display: flex; align-items: center; gap: 1rem; }
+    .badge { background: #6366f1; color: white; padding: 0.2rem 0.6rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; }
+    .logout { color: #94a3b8; cursor: pointer; background: none; border: 1px solid #334155; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.8rem; }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 1.5rem; margin-bottom: 1rem; }
+    .btn { background: #6366f1; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: 600; }
+    .btn:hover { background: #4f46e5; }
+    .btn:disabled { background: #334155; cursor: not-allowed; }
+    .overall { padding: 1rem; border-radius: 8px; margin-bottom: 1rem; font-weight: 600; font-size: 1rem; }
+    .overall.ok { background: #14532d; color: #4ade80; }
+    .overall.degraded { background: #451a03; color: #fbbf24; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    th { text-align: left; color: #64748b; font-weight: 500; padding: 0.5rem 0.75rem; border-bottom: 1px solid #334155; }
+    td { padding: 0.625rem 0.75rem; border-bottom: 1px solid #1a2535; }
+    tr:hover td { background: #263348; }
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+    .status-dot.ok { background: #4ade80; }
+    .status-dot.error { background: #f87171; }
+    .latency { color: #94a3b8; font-size: 0.8rem; }
+    .detail { color: #64748b; font-size: 0.8rem; max-width: 400px; word-break: break-word; }
+    .timestamp { color: #64748b; font-size: 0.8rem; margin-top: 0.5rem; }
+  </style>
+<script src="/lang.js" is:inline></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="logo">Rezervace <span>Admin</span></div>
+    <nav>
+      <a href="/superadmin"><span data-i18n="dashboard">Dashboard</span></a>
+      <a href="/superadmin/tenants"><span data-i18n="tenants">Tenanti</span></a>
+      <a href="/superadmin/users"><span data-i18n="users">UÅ¾ivatelÃ©</span></a>
+      <a href="/superadmin/event-log"><span data-i18n="eventLog">Event Log</span></a>
+      <a href="/superadmin/system" class="active"><span data-i18n="systemCheck">Stav systÃ©mu</span></a>
+    </nav>
+  </aside>
+  <main class="main">
+    <div class="header">
+      <h1 data-i18n="systemCheck">Stav systÃ©mu</h1>
+      <div class="user-info">
+        <span id="user-email"></span>
+        <span class="badge">superadmin</span>
+        <div style="position:relative;display:inline-block;">
+          <button id="lang-btn" style="background:#334155;border:none;cursor:pointer;color:#f1f5f9;padding:0.3rem 0.8rem;border-radius:4px;font-size:0.8rem;font-weight:600;" onclick="document.getElementById('lang-menu').style.display=document.getElementById('lang-menu').style.display==='block'?'none':'block'">CS &#9660;</button>
+          <div id="lang-menu" style="display:none;position:absolute;right:0;top:110%;background:#1e293b;border:1px solid #334155;border-radius:6px;min-width:80px;z-index:100;">
+            <div onclick="setLang('cs');document.getElementById('lang-menu').style.display='none'" style="padding:0.5rem 1rem;cursor:pointer;color:#f1f5f9;font-size:0.85rem;">CS</div>
+            <div onclick="setLang('en');document.getElementById('lang-menu').style.display='none'" style="padding:0.5rem 1rem;cursor:pointer;color:#f1f5f9;font-size:0.85rem;">EN</div>
+          </div>
+        </div>
+        <button class="logout" onclick="logout()" data-i18n="logout">OdhlÃ¡sit</button>
+      </div>
+    </div>
+    <div class="card">
+      <button class="btn" id="check-btn" onclick="runCheck()" data-i18n="runCheck">Spustit kontrolu</button>
+      <div id="overall" style="margin-top:1rem;display:none;"></div>
+      <div id="timestamp" class="timestamp"></div>
+    </div>
+    <div class="card" id="results-card" style="display:none;">
+      <table>
+        <thead>
+          <tr>
+            <th data-i18n="status">Status</th>
+            <th data-i18n="service">SluÅ¾ba</th>
+            <th data-i18n="latency">Latence</th>
+            <th data-i18n="detail">Detail</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </main>
+  <script>
+    const ADMIN_API_URL = "https://admin-api.bass443.workers.dev";
+    function getToken() { const t = localStorage.getItem("sb_token"); if (!t) { window.location.href = "/login"; return null; } return t; }
+    function logout() { localStorage.clear(); window.location.href = "/login"; }
+
+    const serviceNames = {
+      supabase_db: "Supabase DB",
+      supabase_auth: "Supabase Auth",
+      resend: "Resend (email)",
+      fio_platform: "Fio banka (platform)",
+      worker_fio_polling: "Worker: fio-polling",
+      worker_fio_billing: "Worker: fio-billing",
+      worker_rezervace: "Worker: rezervace",
+      worker_image_optimizer: "Worker: image-optimizer",
+    };
+
+    async function runCheck() {
+      var btn = document.getElementById("check-btn");
+      btn.disabled = true;
+      btn.textContent = window.t("running");
+      document.getElementById("overall").style.display = "none";
+      document.getElementById("results-card").style.display = "none";
+      var token = getToken();
+      try {
+        var res = await fetch(ADMIN_API_URL + "/superadmin/system-check", { headers: { "Authorization": "Bearer " + token } });
+        if (!res.ok) { alert("Chyba: HTTP " + res.status); return; }
+        var data = await res.json();
+        var ov = document.getElementById("overall");
+        ov.style.display = "block";
+        ov.className = "overall " + data.overall;
+        ov.textContent = data.overall === "ok" ? window.t("overallOk") : window.t("overallDegraded");
+        document.getElementById("timestamp").textContent = new Date(data.timestamp).toLocaleString(window.getLang() === "en" ? "en-GB" : "cs-CZ");
+        var tbody = document.getElementById("tbody");
+        tbody.innerHTML = data.services.map(function(s) {
+          return "<tr>" +
+            "<td><span class='status-dot " + s.status + "'></span>" + s.status.toUpperCase() + "</td>" +
+            "<td>" + (serviceNames[s.name] || s.name) + "</td>" +
+            "<td class='latency'>" + s.latency + " ms</td>" +
+            "<td class='detail'>" + s.detail + "</td>" +
+            "</tr>";
+        }).join("");
+        document.getElementById("results-card").style.display = "block";
+      } catch (e) {
+        alert("Chyba: " + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = window.t("runCheck");
+      }
+    }
+
+    (function init() {
+      var user = JSON.parse(localStorage.getItem("sb_user") || "{}");
+      if (user.role !== "superadmin") { window.location.href = "/login"; return; }
+      document.getElementById("user-email").textContent = user.email || "";
+    })();
+  </script>
+</body>
+</html>
