@@ -12,6 +12,45 @@ async function testService(name: string, testFn: () => Promise<any>): Promise<{ 
   }
 }
 
+// --- Resolve API keys: DB (system_settings) s fallbackem na env ---
+interface ResolvedKeys {
+  SUPABASE_SERVICE_KEY: string;
+  RESEND_API_KEY: string;
+  FIO_PLATFORM_TOKEN: string;
+  INTERNAL_AUTH_TOKEN: string;
+}
+
+async function resolveApiKeys(env: Env): Promise<ResolvedKeys> {
+  const defaults: ResolvedKeys = {
+    SUPABASE_SERVICE_KEY: env.SUPABASE_SERVICE_KEY,
+    RESEND_API_KEY: env.RESEND_API_KEY,
+    FIO_PLATFORM_TOKEN: env.FIO_PLATFORM_TOKEN,
+    INTERNAL_AUTH_TOKEN: env.INTERNAL_AUTH_TOKEN,
+  };
+  const keyMap: Record<string, keyof ResolvedKeys> = {
+    supabase: "SUPABASE_SERVICE_KEY",
+    resend: "RESEND_API_KEY",
+    fio: "FIO_PLATFORM_TOKEN",
+    internal: "INTERNAL_AUTH_TOKEN",
+  };
+  try {
+    const res = await fetch(${env.SUPABASE_URL}/rest/v1/system_settings?select=key,encrypted_value,iv, {
+      headers: { "Authorization": Bearer ${env.SUPABASE_SERVICE_KEY}, "apikey": env.SUPABASE_SERVICE_KEY },
+    });
+    if (!res.ok) return defaults;
+    const rows = await res.json() as Array<{ key: string; encrypted_value: string; iv: string }>;
+    for (const row of rows) {
+      const envKey = keyMap[row.key];
+      if (envKey && row.encrypted_value && row.iv) {
+        try {
+          defaults[envKey] = await decrypt(row.encrypted_value, row.iv, env.ENCRYPTION_KEY);
+        } catch { /* decrypt failed - keep env fallback */ }
+      }
+    }
+  } catch { /* DB nedostupna - keep env fallback */ }
+  return defaults;
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
@@ -25,7 +64,8 @@ export default {
     if (path.startsWith("/superadmin/")) {
       const roleCheck = requireSuperadmin(user);
       if (roleCheck) return new Response(JSON.stringify({ error: roleCheck.error }), { status: roleCheck.status, headers: { ...cors, "Content-Type": "application/json" } });
-      const sbHeaders = { "Authorization": `Bearer ${env.SUPABASE_SERVICE_KEY}`, "apikey": env.SUPABASE_SERVICE_KEY };
+      const keys = await resolveApiKeys(env);
+      const sbHeaders = { "Authorization": Bearer ${keys.SUPABASE_SERVICE_KEY}, "apikey": keys.SUPABASE_SERVICE_KEY };
 
       if (path === "/superadmin/system-check") {
         const results = await Promise.all([
@@ -35,20 +75,20 @@ export default {
             return `HTTP ${res.status} - DB dostupna`;
           }),
           testService("supabase_auth", async () => {
-            const res = await fetch(`${env.SUPABASE_URL}/auth/v1/settings`, { headers: { "apikey": env.SUPABASE_SERVICE_KEY } });
+            const res = await fetch(`${env.SUPABASE_URL}/auth/v1/settings`, { headers: { "apikey": keys.SUPABASE_SERVICE_KEY } });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             return `HTTP ${res.status} - Auth dostupny`;
           }),
           testService("resend", async () => {
-            if (!env.RESEND_API_KEY) throw new Error("RESEND_API_KEY neni nastaven");
-            const res = await fetch("https://api.resend.com/api-keys", { headers: { "Authorization": `Bearer ${env.RESEND_API_KEY}` } });
+            if (!keys.RESEND_API_KEY) throw new Error("RESEND_API_KEY neni nastaven");
+            const res = await fetch("https://api.resend.com/api-keys", { headers: { "Authorization": `Bearer ${keys.RESEND_API_KEY}` } });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             return `HTTP ${res.status} - Resend dostupny`;
           }),
           testService("fio_platform", async () => {
-            if (!env.FIO_PLATFORM_TOKEN) throw new Error("FIO_PLATFORM_TOKEN neni nastaven");
+            if (!keys.FIO_PLATFORM_TOKEN) throw new Error("FIO_PLATFORM_TOKEN neni nastaven");
             const today = new Date().toISOString().slice(0, 10);
-            const res = await fetch(`https://fioapi.fio.cz/v1/rest/periods/${env.FIO_PLATFORM_TOKEN}/${today}/${today}/transactions.json`);
+            const res = await fetch(`https://fioapi.fio.cz/v1/rest/periods/${keys.FIO_PLATFORM_TOKEN}/${today}/${today}/transactions.json`);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             return `HTTP ${res.status} - Fio dostupne`;
           }),
@@ -186,7 +226,8 @@ export default {
     if (path.startsWith("/admin/") && path !== "/admin/me") {
       const roleCheck = requireAdmin(user);
       if (roleCheck) return new Response(JSON.stringify({ error: roleCheck.error }), { status: roleCheck.status, headers: { ...cors, "Content-Type": "application/json" } });
-      const sbHeaders = { "Authorization": `Bearer ${env.SUPABASE_SERVICE_KEY}`, "apikey": env.SUPABASE_SERVICE_KEY };
+      const keys = await resolveApiKeys(env);
+      const sbHeaders = { "Authorization": Bearer ${keys.SUPABASE_SERVICE_KEY}, "apikey": keys.SUPABASE_SERVICE_KEY };
       const tenantFilter = user.role === "superadmin" ? "" : `&tenant_id=eq.${user.tenant_id}`;
 
       if (path === "/admin/dashboard") {
