@@ -2,44 +2,73 @@
 ---
 <!DOCTYPE html>
 <html lang="cs">
-<head><meta charset='UTF-8'>
+<head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Stav systému | Rezervace Admin</title>
+  <title>Systém | Rezervace Admin</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: system-ui, sans-serif; background: #0f172a; color: #f1f5f9; }
-    .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 240px; background: #1e293b; border-right: 1px solid #334155; padding: 1.5rem 0; }
+    .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 220px; background: #1e293b; border-right: 1px solid #334155; padding: 1.5rem 0; z-index: 10; }
     .logo { padding: 0 1.5rem 1.5rem; border-bottom: 1px solid #334155; font-weight: 700; font-size: 1.1rem; }
     .logo span { color: #6366f1; }
     nav a { display: flex; align-items: center; gap: 0.75rem; padding: 0.625rem 1.5rem; color: #94a3b8; text-decoration: none; font-size: 0.9rem; }
     nav a:hover, nav a.active { color: #f1f5f9; background: #334155; }
     nav a.active { border-right: 2px solid #6366f1; }
-    .main { margin-left: 240px; padding: 2rem; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
-    .header h1 { font-size: 1.5rem; }
-    .user-info { color: #94a3b8; font-size: 0.875rem; display: flex; align-items: center; gap: 1rem; }
+    .layout { display: flex; margin-left: 220px; min-height: 100vh; }
+    .content { flex: 1; padding: 1.5rem 2rem; overflow-y: auto; }
+    .terminal-panel { width: 380px; min-width: 380px; border-left: 1px solid #334155; background: #1a1b26; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow: hidden; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+    .header h1 { font-size: 1.4rem; }
+    .user-info { color: #94a3b8; font-size: 0.85rem; display: flex; align-items: center; gap: 0.75rem; }
     .badge { background: #6366f1; color: white; padding: 0.2rem 0.6rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; }
     .logout { color: #94a3b8; cursor: pointer; background: none; border: 1px solid #334155; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.8rem; }
-    .card { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 1.5rem; margin-bottom: 1rem; }
-    .btn { background: #6366f1; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: 600; }
+    .section { margin-bottom: 1.5rem; }
+    .section-title { font-size: 1rem; font-weight: 700; margin-bottom: 0.75rem; color: #94a3b8; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 1px; }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 1.25rem; margin-bottom: 0.75rem; }
+    .card-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
+    .btn { background: #6366f1; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; white-space: nowrap; }
     .btn:hover { background: #4f46e5; }
     .btn:disabled { background: #334155; cursor: not-allowed; }
-    .overall { padding: 1rem; border-radius: 8px; margin-bottom: 1rem; font-weight: 600; font-size: 1rem; }
+    .btn-sm { padding: 0.35rem 0.7rem; font-size: 0.8rem; }
+    .btn-outline { background: transparent; border: 1px solid #334155; color: #94a3b8; }
+    .btn-outline:hover { background: #334155; color: #f1f5f9; }
+    .btn-green { background: #059669; }
+    .btn-green:hover { background: #047857; }
+    .btn-green:disabled { background: #334155; }
+    .btn-row { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap; }
+    .overall { padding: 0.75rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.9rem; margin-bottom: 0.75rem; }
     .overall.ok { background: #14532d; color: #4ade80; }
     .overall.degraded { background: #451a03; color: #fbbf24; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
-    th { text-align: left; color: #64748b; font-weight: 500; padding: 0.5rem 0.75rem; border-bottom: 1px solid #334155; }
-    td { padding: 0.625rem 0.75rem; border-bottom: 1px solid #1a2535; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+    th { text-align: left; color: #64748b; font-weight: 500; padding: 0.4rem 0.5rem; border-bottom: 1px solid #334155; }
+    td { padding: 0.5rem; border-bottom: 1px solid #1a2535; }
     tr:hover td { background: #263348; }
-    .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
     .status-dot.ok { background: #4ade80; }
     .status-dot.error { background: #f87171; }
-    .latency { color: #94a3b8; font-size: 0.8rem; }
-    .detail { color: #64748b; font-size: 0.8rem; max-width: 400px; word-break: break-word; }
-    .timestamp { color: #64748b; font-size: 0.8rem; margin-top: 0.5rem; }
+    .key-row { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }
+    .key-input { flex: 1; min-width: 0; background: #0f172a; border: 1px solid #334155; color: #f1f5f9; padding: 0.45rem 0.65rem; border-radius: 6px; font-family: 'Cascadia Code','Consolas',monospace; font-size: 0.8rem; }
+    .key-input:focus { outline: none; border-color: #6366f1; }
+    .key-status { font-size: 0.75rem; padding: 0.15rem 0.45rem; border-radius: 4px; white-space: nowrap; }
+    .key-status.ok { background: #14532d; color: #4ade80; }
+    .key-status.error { background: #451a03; color: #f87171; }
+    .key-status.pending { background: #1e293b; color: #64748b; }
+    .key-status.saved { background: #1e1b4b; color: #a5b4fc; }
+    details { margin-top: 0.4rem; }
+    details summary { color: #64748b; font-size: 0.75rem; cursor: pointer; }
+    details summary:hover { color: #94a3b8; }
+    details .help-text { color: #64748b; font-size: 0.75rem; padding: 0.4rem 0 0 1rem; line-height: 1.5; }
+    details .help-text code { background: #0f172a; padding: 0.1rem 0.3rem; border-radius: 3px; }
+    .key-meta { font-size: 0.7rem; color: #64748b; margin-top: 0.25rem; }
+    .divider { border: none; border-top: 1px solid #334155; margin: 1.5rem 0; }
+    /* Terminal panel overrides */
+    .terminal-panel .term-wrapper { border: none; border-radius: 0; margin: 0; height: 100%; display: flex; flex-direction: column; }
+    .terminal-panel .term-collapsible { max-height: none !important; flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+    .terminal-panel .term-collapsible.open { max-height: none !important; }
+    .terminal-panel .term-body { flex: 1; max-height: none; min-height: 0; }
   </style>
-<script src="/lang.js" is:inline></script>
+  <script src="/lang.js" is:inline></script>
 </head>
 <body>
   <aside class="sidebar">
@@ -47,102 +76,268 @@
     <nav>
       <a href="/superadmin"><span data-i18n="dashboard">Dashboard</span></a>
       <a href="/superadmin/tenants"><span data-i18n="tenants">Tenanti</span></a>
-      <a href="/superadmin/users"><span data-i18n="users">UÅ¾ivatelÃ©</span></a>
+      <a href="/superadmin/users"><span data-i18n="users">U\u017eivatele</span></a>
       <a href="/superadmin/event-log"><span data-i18n="eventLog">Event Log</span></a>
-      <a href="/superadmin/system" class="active"><span data-i18n="systemCheck">Stav systÃ©mu</span></a>
+      <a href="/superadmin/system" class="active"><span data-i18n="systemCheck">Syst\u00e9m</span></a>
     </nav>
   </aside>
-  <main class="main">
-    <div class="header">
-      <h1 data-i18n="systemCheck">Stav systÃ©mu</h1>
-      <div class="user-info">
-        <span id="user-email"></span>
-        <span class="badge">superadmin</span>
-        <div style="position:relative;display:inline-block;">
-          <button id="lang-btn" style="background:#334155;border:none;cursor:pointer;color:#f1f5f9;padding:0.3rem 0.8rem;border-radius:4px;font-size:0.8rem;font-weight:600;" onclick="document.getElementById('lang-menu').style.display=document.getElementById('lang-menu').style.display==='block'?'none':'block'">CS &#9660;</button>
-          <div id="lang-menu" style="display:none;position:absolute;right:0;top:110%;background:#1e293b;border:1px solid #334155;border-radius:6px;min-width:80px;z-index:100;">
-            <div onclick="setLang('cs');document.getElementById('lang-menu').style.display='none'" style="padding:0.5rem 1rem;cursor:pointer;color:#f1f5f9;font-size:0.85rem;">CS</div>
-            <div onclick="setLang('en');document.getElementById('lang-menu').style.display='none'" style="padding:0.5rem 1rem;cursor:pointer;color:#f1f5f9;font-size:0.85rem;">EN</div>
-          </div>
-        </div>
-        <button class="logout" onclick="logout()" data-i18n="logout">OdhlÃ¡sit</button>
-      </div>
-    </div>
-    <div class="card">
-      <button class="btn" id="check-btn" data-i18n="runCheck">Spustit kontrolu</button>
-      <div id="overall" style="margin-top:1rem;display:none;"></div>
-      <div id="timestamp" class="timestamp"></div>
-    </div>
-    <div class="card" id="results-card" style="display:none;">
-      <table>
-        <thead>
-          <tr>
-            <th data-i18n="status">Status</th>
-            <th data-i18n="service">SluÅ¾ba</th>
-            <th data-i18n="latency">Latence</th>
-            <th data-i18n="detail">Detail</th>
-          </tr>
-        </thead>
-        <tbody id="tbody"></tbody>
-      </table>
-    </div>
-  </main>
-  <script>
-    const ADMIN_API_URL = "https://admin-api.bass443.workers.dev";
-    function getToken() { const t = localStorage.getItem("sb_token"); if (!t) { window.location.href = "/login"; return null; } return t; }
-    function logout() { localStorage.clear(); window.location.href = "/login"; }
 
-    const serviceNames = {
-      supabase_db: "Supabase DB",
-      supabase_auth: "Supabase Auth",
-      resend: "Resend (email)",
-      fio_platform: "Fio banka (platform)",
-      worker_fio_polling: "Worker: fio-polling",
-      worker_fio_billing: "Worker: fio-billing",
-      worker_rezervace: "Worker: rezervace",
-      worker_image_optimizer: "Worker: image-optimizer",
+  <div class="layout">
+    <main class="content">
+      <div class="header">
+        <h1 data-i18n="systemCheck">Syst\u00e9m</h1>
+        <div class="user-info">
+          <span id="user-email"></span>
+          <span class="badge">superadmin</span>
+          <button class="logout" id="logout-btn" data-i18n="logout">Odhl\u00e1sit</button>
+        </div>
+      </div>
+
+      <!-- SYSTEM CHECK -->
+      <div class="section">
+        <div class="section-title">Health Check</div>
+        <div class="btn-row">
+          <button class="btn" id="check-btn" data-i18n="runCheck">Spustit kontrolu</button>
+        </div>
+        <div id="overall" style="display:none;"></div>
+        <div class="card" id="results-card" style="display:none;">
+          <table>
+            <thead><tr>
+              <th>Status</th>
+              <th data-i18n="service">Slu\u017eba</th>
+              <th data-i18n="latency">Latence</th>
+              <th data-i18n="detail">Detail</th>
+            </tr></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- API KEYS -->
+      <div class="section">
+        <div class="section-title">API kl\u00ed\u010de</div>
+        <div class="btn-row">
+          <button class="btn" id="test-all-btn" data-i18n="testAll">Otestovat v\u0161e</button>
+        </div>
+
+        <div class="card" id="card-supabase">
+          <div class="card-title">\ud83d\uddc4\ufe0f Supabase <span class="key-status pending" id="status-supabase">?</span></div>
+          <div class="key-row">
+            <input type="password" class="key-input" id="key-supabase" placeholder="sb_sec... nebo eyJ...">
+            <button class="btn btn-sm btn-outline" id="show-supabase">\ud83d\udc41</button>
+            <button class="btn btn-sm" id="test-supabase">Test</button>
+            <button class="btn btn-sm btn-green" id="save-supabase" disabled>Ulo\u017eit</button>
+          </div>
+          <div class="key-meta" id="meta-supabase"></div>
+          <details>
+            <summary>Kde kl\u00ed\u010d naj\u00edt?</summary>
+            <div class="help-text">Supabase Dashboard \u2192 Settings \u2192 API \u2192 <code>service_role</code> key</div>
+          </details>
+        </div>
+
+        <div class="card" id="card-resend">
+          <div class="card-title">\ud83d\udce7 Resend <span class="key-status pending" id="status-resend">?</span></div>
+          <div class="key-row">
+            <input type="password" class="key-input" id="key-resend" placeholder="re_...">
+            <button class="btn btn-sm btn-outline" id="show-resend">\ud83d\udc41</button>
+            <button class="btn btn-sm" id="test-resend">Test</button>
+            <button class="btn btn-sm btn-green" id="save-resend" disabled>Ulo\u017eit</button>
+          </div>
+          <div class="key-meta" id="meta-resend"></div>
+          <details>
+            <summary>Kde kl\u00ed\u010d naj\u00edt?</summary>
+            <div class="help-text">resend.com \u2192 API Keys \u2192 Create<br>\u26a0\ufe0f Dom\u00e9na <code>bass443.com</code> mus\u00ed b\u00fdt ov\u011b\u0159ena</div>
+          </details>
+        </div>
+
+        <div class="card" id="card-fio">
+          <div class="card-title">\ud83c\udfe6 Fio banka <span class="key-status pending" id="status-fio">?</span></div>
+          <div class="key-row">
+            <input type="password" class="key-input" id="key-fio" placeholder="token z Fio IB">
+            <button class="btn btn-sm btn-outline" id="show-fio">\ud83d\udc41</button>
+            <button class="btn btn-sm" id="test-fio">Test</button>
+            <button class="btn btn-sm btn-green" id="save-fio" disabled>Ulo\u017eit</button>
+          </div>
+          <div class="key-meta" id="meta-fio"></div>
+          <details>
+            <summary>Kde kl\u00ed\u010d naj\u00edt?</summary>
+            <div class="help-text">Fio IB \u2192 Nastaven\u00ed \u2192 API \u2192 Token pro \u010dten\u00ed<br>\u26a0\ufe0f Rate limit 30s, m\u016f\u017ee expirovat!</div>
+          </details>
+        </div>
+
+        <div class="card" id="card-internal">
+          <div class="card-title">\ud83d\udd10 Internal Auth <span class="key-status pending" id="status-internal">?</span></div>
+          <div class="key-row">
+            <input type="password" class="key-input" id="key-internal" placeholder="vlastn\u00ed token">
+            <button class="btn btn-sm btn-outline" id="show-internal">\ud83d\udc41</button>
+            <button class="btn btn-sm" id="test-internal">Test</button>
+            <button class="btn btn-sm btn-green" id="save-internal" disabled>Ulo\u017eit</button>
+          </div>
+          <div class="key-meta" id="meta-internal"></div>
+          <details>
+            <summary>Kde kl\u00ed\u010d naj\u00edt?</summary>
+            <div class="help-text">Vlastn\u00ed UUID/random token. Ulo\u017een v Cloudflare Secrets.</div>
+          </details>
+        </div>
+      </div>
+    </main>
+
+    <aside class="terminal-panel">
+      <div id="terminal-container"></div>
+    </aside>
+  </div>
+
+  <script src="/terminal.js" is:inline></script>
+  <script>
+    var API = "https://admin-api.bass443.workers.dev";
+    function getToken() { var t = localStorage.getItem("sb_token"); if (!t) { window.location.href = "/login"; return null; } return t; }
+    var services = ["supabase","resend","fio","internal"];
+    var serviceNames = {
+      supabase_db:"Supabase DB", supabase_auth:"Supabase Auth", resend:"Resend (email)",
+      fio_platform:"Fio banka", worker_fio_polling:"Worker: fio-polling",
+      worker_fio_billing:"Worker: fio-billing", worker_rezervace:"Worker: rezervace",
+      worker_image_optimizer:"Worker: image-optimizer"
     };
 
+    // === SYSTEM CHECK ===
     async function runCheck() {
       var btn = document.getElementById("check-btn");
       btn.disabled = true;
       btn.textContent = window.t("running");
       document.getElementById("overall").style.display = "none";
       document.getElementById("results-card").style.display = "none";
-      var token = getToken();
+      window.term.banner("System Health Check");
       try {
-        var res = await fetch(ADMIN_API_URL + "/superadmin/system-check", { headers: { "Authorization": "Bearer " + token } });
-        if (!res.ok) { alert("Chyba: HTTP " + res.status); return; }
+        var res = await fetch(API + "/superadmin/system-check", { headers: { "Authorization": "Bearer " + getToken() } });
+        if (!res.ok) { window.term.error("HTTP " + res.status); return; }
         var data = await res.json();
         var ov = document.getElementById("overall");
         ov.style.display = "block";
         ov.className = "overall " + data.overall;
         ov.textContent = data.overall === "ok" ? window.t("overallOk") : window.t("overallDegraded");
-        document.getElementById("timestamp").textContent = new Date(data.timestamp).toLocaleString(window.getLang() === "en" ? "en-GB" : "cs-CZ");
         var tbody = document.getElementById("tbody");
         tbody.innerHTML = data.services.map(function(s) {
-          return "<tr>" +
-            "<td><span class='status-dot " + s.status + "'></span>" + s.status.toUpperCase() + "</td>" +
-            "<td>" + (serviceNames[s.name] || s.name) + "</td>" +
-            "<td class='latency'>" + s.latency + " ms</td>" +
-            "<td class='detail'>" + s.detail + "</td>" +
-            "</tr>";
+          if (s.status === "ok") window.term.ok((serviceNames[s.name]||s.name) + " \u2014 " + s.latency + "ms");
+          else window.term.error((serviceNames[s.name]||s.name) + " \u2014 " + s.detail);
+          return "<tr><td><span class=\'status-dot "+s.status+"\'></span>"+s.status.toUpperCase()+"</td>"
+            +"<td>"+(serviceNames[s.name]||s.name)+"</td>"
+            +"<td style=\'color:#94a3b8;font-size:0.8rem\'>"+s.latency+" ms</td>"
+            +"<td style=\'color:#64748b;font-size:0.8rem;max-width:250px;word-break:break-word\'>"+s.detail+"</td></tr>";
         }).join("");
         document.getElementById("results-card").style.display = "block";
+        window.term.separator();
+        window.term.info("Health check hotovo.");
+      } catch (e) { window.term.error(e.message); }
+      finally { btn.disabled = false; btn.textContent = window.t("runCheck"); }
+    }
+    document.getElementById("check-btn").addEventListener("click", runCheck);
+
+    // === API KEYS ===
+    services.forEach(function(svc) {
+      document.getElementById("show-" + svc).addEventListener("click", function() {
+        var inp = document.getElementById("key-" + svc);
+        inp.type = inp.type === "password" ? "text" : "password";
+      });
+    });
+
+    async function testKey(svc) {
+      var keyVal = document.getElementById("key-" + svc).value.trim();
+      if (!keyVal) { window.term.error(svc + " \u2014 pr\u00e1zdn\u00fd kl\u00ed\u010d!"); return false; }
+      var statusEl = document.getElementById("status-" + svc);
+      var saveBtn = document.getElementById("save-" + svc);
+      statusEl.className = "key-status pending"; statusEl.textContent = "...";
+      saveBtn.disabled = true;
+      document.getElementById("test-" + svc).disabled = true;
+      window.term.info("Testuji " + svc + "...");
+      try {
+        var res = await fetch(API + "/superadmin/test-api-key", {
+          method: "POST",
+          headers: { "Authorization": "Bearer " + getToken(), "Content-Type": "application/json" },
+          body: JSON.stringify({ service: svc, key: keyVal })
+        });
+        var data = await res.json();
+        if (data.status === "ok") {
+          statusEl.className = "key-status ok"; statusEl.textContent = "OK";
+          saveBtn.disabled = false;
+          window.term.ok(svc + " \u2014 " + data.detail);
+          return true;
+        } else {
+          statusEl.className = "key-status error"; statusEl.textContent = "CHYBA";
+          window.term.error(svc + " \u2014 " + data.detail);
+          return false;
+        }
       } catch (e) {
-        alert("Chyba: " + e.message);
-      } finally {
-        btn.disabled = false;
-        btn.textContent = window.t("runCheck");
-      }
+        statusEl.className = "key-status error"; statusEl.textContent = "CHYBA";
+        window.term.error(svc + " \u2014 " + e.message);
+        return false;
+      } finally { document.getElementById("test-" + svc).disabled = false; }
     }
 
-    (function init() {
+    async function saveKey(svc) {
+      var keyVal = document.getElementById("key-" + svc).value.trim();
+      if (!keyVal) return;
+      var saveBtn = document.getElementById("save-" + svc);
+      saveBtn.disabled = true;
+      window.term.info("Ukl\u00e1d\u00e1m " + svc + " (AES-256-GCM)...");
+      try {
+        var res = await fetch(API + "/superadmin/save-api-key", {
+          method: "POST",
+          headers: { "Authorization": "Bearer " + getToken(), "Content-Type": "application/json" },
+          body: JSON.stringify({ service: svc, key: keyVal })
+        });
+        var data = await res.json();
+        if (data.status === "ok") {
+          document.getElementById("status-" + svc).className = "key-status saved";
+          document.getElementById("status-" + svc).textContent = "SAVED";
+          window.term.ok(svc + " \u2014 ulo\u017eeno do DB (\u0161ifrov\u00e1no)");
+          loadMeta();
+        } else {
+          window.term.error(svc + " \u2014 " + (data.error || "chyba ukl\u00e1d\u00e1n\u00ed"));
+        }
+      } catch (e) { window.term.error(svc + " \u2014 " + e.message); }
+    }
+
+    services.forEach(function(svc) {
+      document.getElementById("test-" + svc).addEventListener("click", function() { testKey(svc); });
+      document.getElementById("save-" + svc).addEventListener("click", function() { saveKey(svc); });
+    });
+
+    document.getElementById("test-all-btn").addEventListener("click", async function() {
+      this.disabled = true;
+      window.term.clear();
+      window.term.banner("Test v\u0161ech API kl\u00ed\u010d\u016f");
+      for (var i = 0; i < services.length; i++) { await testKey(services[i]); }
+      window.term.separator();
+      window.term.info("Hotovo.");
+      this.disabled = false;
+    });
+
+    async function loadMeta() {
+      try {
+        var res = await fetch(API + "/superadmin/load-api-keys", { headers: { "Authorization": "Bearer " + getToken() } });
+        var rows = await res.json();
+        rows.forEach(function(r) {
+          var el = document.getElementById("meta-" + r.key);
+          if (el) {
+            var d = new Date(r.updated_at);
+            el.textContent = "Ulo\u017eeno: " + d.toLocaleString("cs-CZ") + (r.updated_by ? " (" + r.updated_by + ")" : "");
+          }
+        });
+      } catch(e) {}
+    }
+
+    // === INIT ===
+    (function() {
       var user = JSON.parse(localStorage.getItem("sb_user") || "{}");
       if (user.role !== "superadmin") { window.location.href = "/login"; return; }
       document.getElementById("user-email").textContent = user.email || "";
+      document.getElementById("logout-btn").addEventListener("click", function() { localStorage.clear(); window.location.href = "/login"; });
+      loadMeta();
+      // Auto-open terminal
+      setTimeout(function() { if (window.term && window.term.open) window.term.open(); }, 100);
     })();
-    document.getElementById("check-btn").addEventListener("click", runCheck);
   </script>
 </body>
 </html>
