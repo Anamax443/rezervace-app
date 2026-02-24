@@ -89,6 +89,45 @@ export default {
         return new Response(JSON.stringify({ overall: allOk ? "ok" : "degraded", timestamp: new Date().toISOString(), services: results, log_status: logStatus, log_error: logError }), { headers: { ...cors, "Content-Type": "application/json" } });
       }
 
+
+      if (path === "/superadmin/test-api-key") {
+        if (request.method !== "POST") return new Response(JSON.stringify({ error: "POST only" }), { status: 405, headers: { ...cors, "Content-Type": "application/json" } });
+        const body = await request.json() as { service: string; key: string };
+        if (!body.service || !body.key) return new Response(JSON.stringify({ error: "service and key required" }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
+
+        const result = await testService(body.service, async () => {
+          switch (body.service) {
+            case "supabase": {
+              const res = await fetch(`${env.SUPABASE_URL}/rest/v1/tenants?select=id&limit=1`, { headers: { "apikey": body.key, "Authorization": `Bearer ${body.key}` } });
+              if (!res.ok) throw new Error(`HTTP ${res.status} - ${res.statusText}`);
+              const data = await res.json() as any[];
+              return `OK - DB dostupna, ${data.length} tenant(u)`;
+            }
+            case "resend": {
+              const res = await fetch("https://api.resend.com/api-keys", { headers: { "Authorization": `Bearer ${body.key}` } });
+              if (!res.ok) throw new Error(`HTTP ${res.status} - neplatny klic`);
+              return "OK - Resend klic platny";
+            }
+            case "fio": {
+              const today = new Date().toISOString().slice(0, 10);
+              const res = await fetch(`https://fioapi.fio.cz/v1/rest/periods/${body.key}/${today}/${today}/transactions.json`);
+              if (!res.ok) throw new Error(`HTTP ${res.status} - token neplatny nebo rate limit`);
+              const data = await res.json() as any;
+              const info = data?.accountStatement?.info;
+              return `OK - ucet ${info?.iban || "?"} (${info?.currency || "?"})`;
+            }
+            case "internal": {
+              const res = await fetch("https://admin-api.bass443.workers.dev/health");
+              if (!res.ok) throw new Error(`HTTP ${res.status}`);
+              return "OK - Worker dostupny";
+            }
+            default:
+              throw new Error("Neznama sluzba: " + body.service);
+          }
+        });
+        return new Response(JSON.stringify(result), { headers: { ...cors, "Content-Type": "application/json" } });
+      }
+
       if (path === "/superadmin/tenants") {
         const res = await fetch(`${env.SUPABASE_URL}/rest/v1/tenants?select=id,nazev,subdomain,plan,plan_status,plan_expirace,aktivni,created_at&order=created_at.desc`, { headers: sbHeaders });
         return new Response(await res.text(), { status: res.status, headers: { ...cors, "Content-Type": "application/json" } });
