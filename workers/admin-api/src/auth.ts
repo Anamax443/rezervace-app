@@ -10,6 +10,7 @@ export interface Env {
   SUPABASE_SERVICE_KEY: string;
   INTERNAL_AUTH_TOKEN: string;
   RESEND_API_KEY: string;
+  ENCRYPTION_KEY: string;
   FIO_PLATFORM_TOKEN: string;
 }
 

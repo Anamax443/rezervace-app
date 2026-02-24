@@ -1,3 +1,4 @@
+import { encrypt, decrypt } from "./crypto";
 import { verifyAuth, requireSuperadmin, requireAdmin, jsonResponse, type Env } from "./auth";
 const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS", "Access-Control-Allow-Headers": "Content-Type, Authorization" };
 
@@ -126,6 +127,42 @@ export default {
           }
         });
         return new Response(JSON.stringify(result), { headers: { ...cors, "Content-Type": "application/json" } });
+      }
+
+
+      if (path === "/superadmin/save-api-key") {
+        if (request.method !== "POST") return new Response(JSON.stringify({ error: "POST only" }), { status: 405, headers: { ...cors, "Content-Type": "application/json" } });
+        const body = await request.json() as { service: string; key: string };
+        if (!body.service || !body.key) return new Response(JSON.stringify({ error: "service and key required" }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
+        const { encrypted, iv } = await encrypt(body.key, env.ENCRYPTION_KEY);
+        const res = await fetch(`${env.SUPABASE_URL}/rest/v1/system_settings?key=eq.${body.service}`, {
+          method: "GET", headers: sbHeaders,
+        });
+        const existing = await res.json() as any[];
+        const payload = { key: body.service, encrypted_value: encrypted, iv, updated_at: new Date().toISOString(), updated_by: user.email };
+        let saveRes;
+        if (existing.length > 0) {
+          saveRes = await fetch(`${env.SUPABASE_URL}/rest/v1/system_settings?key=eq.${body.service}`, {
+            method: "PATCH", headers: { ...sbHeaders, "Content-Type": "application/json", "Prefer": "return=minimal" },
+            body: JSON.stringify(payload),
+          });
+        } else {
+          saveRes = await fetch(`${env.SUPABASE_URL}/rest/v1/system_settings`, {
+            method: "POST", headers: { ...sbHeaders, "Content-Type": "application/json", "Prefer": "return=minimal" },
+            body: JSON.stringify(payload),
+          });
+        }
+        if (!saveRes.ok) {
+          const err = await saveRes.text();
+          return new Response(JSON.stringify({ error: "DB save failed", detail: err }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
+        }
+        return new Response(JSON.stringify({ status: "ok", service: body.service }), { headers: { ...cors, "Content-Type": "application/json" } });
+      }
+
+      if (path === "/superadmin/load-api-keys") {
+        const res = await fetch(`${env.SUPABASE_URL}/rest/v1/system_settings?select=key,updated_at,updated_by`, { headers: sbHeaders });
+        const rows = await res.json() as any[];
+        return new Response(JSON.stringify(rows), { headers: { ...cors, "Content-Type": "application/json" } });
       }
 
       if (path === "/superadmin/tenants") {
