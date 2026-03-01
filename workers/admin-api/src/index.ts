@@ -34,8 +34,8 @@ async function resolveApiKeys(env: Env): Promise<ResolvedKeys> {
     internal: "INTERNAL_AUTH_TOKEN",
   };
   try {
-    const res = await fetch(${env.SUPABASE_URL}/rest/v1/system_settings?select=key,encrypted_value,iv, {
-      headers: { "Authorization": Bearer ${env.SUPABASE_SERVICE_KEY}, "apikey": env.SUPABASE_SERVICE_KEY },
+    const res = await fetch(`${env.SUPABASE_URL}/rest/v1/system_settings?select=key,encrypted_value,iv`, {
+      headers: { "Authorization": `Bearer ${env.SUPABASE_SERVICE_KEY}`, "apikey": env.SUPABASE_SERVICE_KEY },
     });
     if (!res.ok) return defaults;
     const rows = await res.json() as Array<{ key: string; encrypted_value: string; iv: string }>;
@@ -54,6 +54,7 @@ async function resolveApiKeys(env: Env): Promise<ResolvedKeys> {
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
+    try {
     const url = new URL(request.url);
     const path = url.pathname;
     if (path === "/health") return new Response(JSON.stringify({ status: "ok", timestamp: new Date().toISOString() }), { headers: { ...cors, "Content-Type": "application/json" } });
@@ -65,7 +66,7 @@ export default {
       const roleCheck = requireSuperadmin(user);
       if (roleCheck) return new Response(JSON.stringify({ error: roleCheck.error }), { status: roleCheck.status, headers: { ...cors, "Content-Type": "application/json" } });
       const keys = await resolveApiKeys(env);
-      const sbHeaders = { "Authorization": Bearer ${keys.SUPABASE_SERVICE_KEY}, "apikey": keys.SUPABASE_SERVICE_KEY };
+      const sbHeaders = { "Authorization": `Bearer ${keys.SUPABASE_SERVICE_KEY}`, "apikey": keys.SUPABASE_SERVICE_KEY };
 
       if (path === "/superadmin/system-check") {
         const results = await Promise.all([
@@ -227,7 +228,7 @@ export default {
       const roleCheck = requireAdmin(user);
       if (roleCheck) return new Response(JSON.stringify({ error: roleCheck.error }), { status: roleCheck.status, headers: { ...cors, "Content-Type": "application/json" } });
       const keys = await resolveApiKeys(env);
-      const sbHeaders = { "Authorization": Bearer ${keys.SUPABASE_SERVICE_KEY}, "apikey": keys.SUPABASE_SERVICE_KEY };
+      const sbHeaders = { "Authorization": `Bearer ${keys.SUPABASE_SERVICE_KEY}`, "apikey": keys.SUPABASE_SERVICE_KEY };
       const tenantFilter = user.role === "superadmin" ? "" : `&tenant_id=eq.${user.tenant_id}`;
 
       if (path === "/admin/dashboard") {
@@ -269,5 +270,8 @@ export default {
       }
     }
     return new Response(JSON.stringify({ error: "Endpoint nenalezen" }), { status: 404, headers: { ...cors, "Content-Type": "application/json" } });
+    } catch (e: any) {
+      return new Response(JSON.stringify({ error: "Internal server error", detail: e.message || String(e) }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
+    }
   },
 };

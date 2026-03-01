@@ -76,20 +76,20 @@
     <nav>
       <a href="/superadmin"><span data-i18n="dashboard">Dashboard</span></a>
       <a href="/superadmin/tenants"><span data-i18n="tenants">Tenanti</span></a>
-      <a href="/superadmin/users"><span data-i18n="users">U\u017eivatele</span></a>
+      <a href="/superadmin/users"><span data-i18n="users">Uživatele</span></a>
       <a href="/superadmin/event-log"><span data-i18n="eventLog">Event Log</span></a>
-      <a href="/superadmin/system" class="active"><span data-i18n="systemCheck">Syst\u00e9m</span></a>
+      <a href="/superadmin/system" class="active"><span data-i18n="systemCheck">Systém</span></a>
     </nav>
   </aside>
 
   <div class="layout">
     <main class="content">
       <div class="header">
-        <h1 data-i18n="systemCheck">Syst\u00e9m</h1>
+        <h1 data-i18n="systemCheck">Systém</h1>
         <div class="user-info">
           <span id="user-email"></span>
           <span class="badge">superadmin</span>
-          <button class="logout" id="logout-btn" data-i18n="logout">Odhl\u00e1sit</button>
+          <button class="logout" id="logout-btn" data-i18n="logout">Odhlásit</button>
         </div>
       </div>
 
@@ -104,7 +104,7 @@
           <table>
             <thead><tr>
               <th>Status</th>
-              <th data-i18n="service">Slu\u017eba</th>
+              <th data-i18n="service">Služba</th>
               <th data-i18n="latency">Latence</th>
               <th data-i18n="detail">Detail</th>
             </tr></thead>
@@ -117,68 +117,68 @@
 
       <!-- API KEYS -->
       <div class="section">
-        <div class="section-title">API kl\u00ed\u010de</div>
+        <div class="section-title">API klíče</div>
         <div class="btn-row">
-          <button class="btn" id="test-all-btn" data-i18n="testAll">Otestovat v\u0161e</button>
+          <button class="btn" id="test-all-btn" data-i18n="testAll">Otestovat vše</button>
         </div>
 
         <div class="card" id="card-supabase">
-          <div class="card-title">\ud83d\uddc4\ufe0f Supabase <span class="key-status pending" id="status-supabase">?</span></div>
+          <div class="card-title">🗄️ Supabase <span class="key-status pending" id="status-supabase">?</span></div>
           <div class="key-row">
             <input type="password" class="key-input" id="key-supabase" placeholder="sb_sec... nebo eyJ...">
-            <button class="btn btn-sm btn-outline" id="show-supabase">\ud83d\udc41</button>
+            <button class="btn btn-sm btn-outline" id="show-supabase">👁</button>
             <button class="btn btn-sm" id="test-supabase">Test</button>
-            <button class="btn btn-sm btn-green" id="save-supabase" disabled>Ulo\u017eit</button>
+            <button class="btn btn-sm btn-green" id="save-supabase" disabled>Uložit</button>
           </div>
           <div class="key-meta" id="meta-supabase"></div>
           <details>
-            <summary>Kde kl\u00ed\u010d naj\u00edt?</summary>
-            <div class="help-text">Supabase Dashboard \u2192 Settings \u2192 API \u2192 <code>service_role</code> key</div>
+            <summary>Kde klíč najít?</summary>
+            <div class="help-text">Supabase Dashboard → Settings → API → <code>service_role</code> key</div>
           </details>
         </div>
 
         <div class="card" id="card-resend">
-          <div class="card-title">\ud83d\udce7 Resend <span class="key-status pending" id="status-resend">?</span></div>
+          <div class="card-title">📧 Resend <span class="key-status pending" id="status-resend">?</span></div>
           <div class="key-row">
             <input type="password" class="key-input" id="key-resend" placeholder="re_...">
-            <button class="btn btn-sm btn-outline" id="show-resend">\ud83d\udc41</button>
+            <button class="btn btn-sm btn-outline" id="show-resend">👁</button>
             <button class="btn btn-sm" id="test-resend">Test</button>
-            <button class="btn btn-sm btn-green" id="save-resend" disabled>Ulo\u017eit</button>
+            <button class="btn btn-sm btn-green" id="save-resend" disabled>Uložit</button>
           </div>
           <div class="key-meta" id="meta-resend"></div>
           <details>
-            <summary>Kde kl\u00ed\u010d naj\u00edt?</summary>
-            <div class="help-text">resend.com \u2192 API Keys \u2192 Create<br>\u26a0\ufe0f Dom\u00e9na <code>bass443.com</code> mus\u00ed b\u00fdt ov\u011b\u0159ena</div>
+            <summary>Kde klíč najít?</summary>
+            <div class="help-text">resend.com → API Keys → Create<br>⚠️ Doména <code>bass443.com</code> musí být ověřena</div>
           </details>
         </div>
 
         <div class="card" id="card-fio">
-          <div class="card-title">\ud83c\udfe6 Fio banka <span class="key-status pending" id="status-fio">?</span></div>
+          <div class="card-title">🏦 Fio banka <span class="key-status pending" id="status-fio">?</span></div>
           <div class="key-row">
             <input type="password" class="key-input" id="key-fio" placeholder="token z Fio IB">
-            <button class="btn btn-sm btn-outline" id="show-fio">\ud83d\udc41</button>
+            <button class="btn btn-sm btn-outline" id="show-fio">👁</button>
             <button class="btn btn-sm" id="test-fio">Test</button>
-            <button class="btn btn-sm btn-green" id="save-fio" disabled>Ulo\u017eit</button>
+            <button class="btn btn-sm btn-green" id="save-fio" disabled>Uložit</button>
           </div>
           <div class="key-meta" id="meta-fio"></div>
           <details>
-            <summary>Kde kl\u00ed\u010d naj\u00edt?</summary>
-            <div class="help-text">Fio IB \u2192 Nastaven\u00ed \u2192 API \u2192 Token pro \u010dten\u00ed<br>\u26a0\ufe0f Rate limit 30s, m\u016f\u017ee expirovat!</div>
+            <summary>Kde klíč najít?</summary>
+            <div class="help-text">Fio IB → Nastavení → API → Token pro čtení<br>⚠️ Rate limit 30s, může expirovat!</div>
           </details>
         </div>
 
         <div class="card" id="card-internal">
-          <div class="card-title">\ud83d\udd10 Internal Auth <span class="key-status pending" id="status-internal">?</span></div>
+          <div class="card-title">🔐 Internal Auth <span class="key-status pending" id="status-internal">?</span></div>
           <div class="key-row">
-            <input type="password" class="key-input" id="key-internal" placeholder="vlastn\u00ed token">
-            <button class="btn btn-sm btn-outline" id="show-internal">\ud83d\udc41</button>
+            <input type="password" class="key-input" id="key-internal" placeholder="vlastní token">
+            <button class="btn btn-sm btn-outline" id="show-internal">👁</button>
             <button class="btn btn-sm" id="test-internal">Test</button>
-            <button class="btn btn-sm btn-green" id="save-internal" disabled>Ulo\u017eit</button>
+            <button class="btn btn-sm btn-green" id="save-internal" disabled>Uložit</button>
           </div>
           <div class="key-meta" id="meta-internal"></div>
           <details>
-            <summary>Kde kl\u00ed\u010d naj\u00edt?</summary>
-            <div class="help-text">Vlastn\u00ed UUID/random token. Ulo\u017een v Cloudflare Secrets.</div>
+            <summary>Kde klíč najít?</summary>
+            <div class="help-text">Vlastní UUID/random token. Uložen v Cloudflare Secrets.</div>
           </details>
         </div>
       </div>
@@ -219,8 +219,8 @@
         ov.textContent = data.overall === "ok" ? window.t("overallOk") : window.t("overallDegraded");
         var tbody = document.getElementById("tbody");
         tbody.innerHTML = data.services.map(function(s) {
-          if (s.status === "ok") window.term.ok((serviceNames[s.name]||s.name) + " \u2014 " + s.latency + "ms");
-          else window.term.error((serviceNames[s.name]||s.name) + " \u2014 " + s.detail);
+          if (s.status === "ok") window.term.ok((serviceNames[s.name]||s.name) + " — " + s.latency + "ms");
+          else window.term.error((serviceNames[s.name]||s.name) + " — " + s.detail);
           return "<tr><td><span class=\'status-dot "+s.status+"\'></span>"+s.status.toUpperCase()+"</td>"
             +"<td>"+(serviceNames[s.name]||s.name)+"</td>"
             +"<td style=\'color:#94a3b8;font-size:0.8rem\'>"+s.latency+" ms</td>"
@@ -244,7 +244,7 @@
 
     async function testKey(svc) {
       var keyVal = document.getElementById("key-" + svc).value.trim();
-      if (!keyVal) { window.term.error(svc + " \u2014 pr\u00e1zdn\u00fd kl\u00ed\u010d!"); return false; }
+      if (!keyVal) { window.term.error(svc + " — prázdný klíč!"); return false; }
       var statusEl = document.getElementById("status-" + svc);
       var saveBtn = document.getElementById("save-" + svc);
       statusEl.className = "key-status pending"; statusEl.textContent = "...";
@@ -261,16 +261,16 @@
         if (data.status === "ok") {
           statusEl.className = "key-status ok"; statusEl.textContent = "OK";
           saveBtn.disabled = false;
-          window.term.ok(svc + " \u2014 " + data.detail);
+          window.term.ok(svc + " — " + data.detail);
           return true;
         } else {
           statusEl.className = "key-status error"; statusEl.textContent = "CHYBA";
-          window.term.error(svc + " \u2014 " + data.detail);
+          window.term.error(svc + " — " + data.detail);
           return false;
         }
       } catch (e) {
         statusEl.className = "key-status error"; statusEl.textContent = "CHYBA";
-        window.term.error(svc + " \u2014 " + e.message);
+        window.term.error(svc + " — " + e.message);
         return false;
       } finally { document.getElementById("test-" + svc).disabled = false; }
     }
@@ -280,7 +280,7 @@
       if (!keyVal) return;
       var saveBtn = document.getElementById("save-" + svc);
       saveBtn.disabled = true;
-      window.term.info("Ukl\u00e1d\u00e1m " + svc + " (AES-256-GCM)...");
+      window.term.info("Ukládám " + svc + " (AES-256-GCM)...");
       try {
         var res = await fetch(API + "/superadmin/save-api-key", {
           method: "POST",
@@ -291,12 +291,12 @@
         if (data.status === "ok") {
           document.getElementById("status-" + svc).className = "key-status saved";
           document.getElementById("status-" + svc).textContent = "SAVED";
-          window.term.ok(svc + " \u2014 ulo\u017eeno do DB (\u0161ifrov\u00e1no)");
+          window.term.ok(svc + " — uloženo do DB (šifrováno)");
           loadMeta();
         } else {
-          window.term.error(svc + " \u2014 " + (data.error || "chyba ukl\u00e1d\u00e1n\u00ed"));
+          window.term.error(svc + " — " + (data.error || "chyba ukládání"));
         }
-      } catch (e) { window.term.error(svc + " \u2014 " + e.message); }
+      } catch (e) { window.term.error(svc + " — " + e.message); }
     }
 
     services.forEach(function(svc) {
@@ -307,7 +307,7 @@
     document.getElementById("test-all-btn").addEventListener("click", async function() {
       this.disabled = true;
       window.term.clear();
-      window.term.banner("Test v\u0161ech API kl\u00ed\u010d\u016f");
+      window.term.banner("Test všech API klíčů");
       for (var i = 0; i < services.length; i++) { await testKey(services[i]); }
       window.term.separator();
       window.term.info("Hotovo.");
@@ -322,7 +322,7 @@
           var el = document.getElementById("meta-" + r.key);
           if (el) {
             var d = new Date(r.updated_at);
-            el.textContent = "Ulo\u017eeno: " + d.toLocaleString("cs-CZ") + (r.updated_by ? " (" + r.updated_by + ")" : "");
+            el.textContent = "Uloženo: " + d.toLocaleString("cs-CZ") + (r.updated_by ? " (" + r.updated_by + ")" : "");
           }
         });
       } catch(e) {}
