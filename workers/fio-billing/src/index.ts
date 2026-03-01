@@ -235,7 +235,11 @@ export default {
     env: Env,
     ctx: ExecutionContext
   ): Promise<Response> {
-    if (new URL(request.url).pathname === "/run") {
+    const path = new URL(request.url).pathname;
+    if (path === "/health") {
+      return new Response(JSON.stringify({ status: "ok", worker: "fio-billing", timestamp: new Date().toISOString() }), { status: 200, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } });
+    }
+    if (path === "/run") {
       ctx.waitUntil(runBillingCheck(env));
       return new Response("Billing check spuštěn", { status: 200 });
     }

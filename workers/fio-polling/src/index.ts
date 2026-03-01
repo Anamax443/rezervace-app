@@ -147,7 +147,11 @@ export default {
     env: Env,
     ctx: ExecutionContext
   ): Promise<Response> {
-    if (new URL(request.url).pathname === "/run") {
+    const path = new URL(request.url).pathname;
+    if (path === "/health") {
+      return new Response(JSON.stringify({ status: "ok", worker: "fio-polling", timestamp: new Date().toISOString() }), { status: 200, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } });
+    }
+    if (path === "/run") {
       ctx.waitUntil(runPolling(env));
       return new Response("Polling spuštěn", { status: 200 });
     }
