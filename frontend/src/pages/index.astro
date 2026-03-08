@@ -1,4 +1,37 @@
 ---
 export const prerender = true;
 ---
-<!DOCTYPE html>...
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rezervace – Online rezervační systém</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0D0B10; color: #E8E8F0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; }
+    .logo { font-size: 56px; margin-bottom: 24px; }
+    h1 { font-family: Georgia, serif; font-size: 36px; color: #F5E6E8; text-align: center; margin-bottom: 12px; }
+    .subtitle { color: #6B4A52; font-size: 15px; text-align: center; max-width: 420px; line-height: 1.6; margin-bottom: 40px; }
+    .features { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; margin-bottom: 48px; }
+    .feature { background: #1A1015; border: 1px solid #2A1520; border-radius: 12px; padding: 20px 24px; width: 200px; text-align: center; }
+    .feature-icon { font-size: 28px; margin-bottom: 10px; }
+    .feature-title { font-size: 13px; color: #F5E6E8; font-weight: 600; margin-bottom: 4px; }
+    .feature-desc { font-size: 11px; color: #6B4A52; line-height: 1.5; }
+    .btn { padding: 13px 32px; background: linear-gradient(135deg, #8B1A2F 0%, #C0395A 100%); border-radius: 10px; color: #fff; font-size: 15px; font-weight: 600; text-decoration: none; display: inline-block; margin-bottom: 16px; }
+    .demo-link { font-size: 12px; color: #5A3A42; text-decoration: none; display: block; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="logo">🍷</div>
+  <h1>Rezervační systém</h1>
+  <p class="subtitle">Online rezervace míst na kulturní akce — degustace vín, přednášky, koncerty a další.</p>
+  <div class="features">
+    <div class="feature"><div class="feature-icon">🎫</div><div class="feature-title">Online rezervace</div><div class="feature-desc">Rezervujte místa odkudkoliv, kdykoliv</div></div>
+    <div class="feature"><div class="feature-icon">💳</div><div class="feature-title">Platba převodem</div><div class="feature-desc">QR kód a automatické párování plateb</div></div>
+    <div class="feature"><div class="feature-icon">📧</div><div class="feature-title">Vstupenky emailem</div><div class="feature-desc">Automatické odeslání po zaplacení</div></div>
+  </div>
+  <a href="/novak" class="btn">Zobrazit demo →</a>
+  <a href="/novak" class="demo-link">Vino téka Novák — ukázkový tenant</a>
+</body>
+</html>
