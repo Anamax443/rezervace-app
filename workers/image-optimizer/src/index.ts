@@ -84,6 +84,10 @@ async function resizeImage(
 // ── HLAVNÍ HANDLER ────────────────────────────────────────────
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
+    if (new URL(request.url).pathname === "/health") {
+      return new Response(JSON.stringify({ status: "ok", worker: "image-optimizer", timestamp: new Date().toISOString() }), { status: 200, headers: { "Content-Type": "application/json", ...CORS } });
+    }
+
     if (request.method === "OPTIONS") {
       return new Response(null, { headers: CORS });
     }

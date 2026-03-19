@@ -197,6 +197,11 @@ export default {
     const path = url.pathname;
     const method = request.method;
 
+    // Health check
+    if (path === "/health") {
+      return new Response(JSON.stringify({ status: "ok", worker: "rezervace", timestamp: new Date().toISOString() }), { status: 200, headers: { "Content-Type": "application/json", ...CORS } });
+    }
+
     // CORS preflight
     if (method === "OPTIONS") {
       return new Response(null, { headers: CORS });
