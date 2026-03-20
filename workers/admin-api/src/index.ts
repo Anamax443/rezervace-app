@@ -112,22 +112,23 @@ export default {
             return `HTTP ${res.status} - Fio dostupne`;
           }),
           testService("worker_fio_polling", async () => {
-            const res = await fetch("https://fio-polling.bass443.workers.dev/health");
+            // Service Binding — prime volani bez HTTP overhead
+            const res = await env.SVC_FIO_POLLING.fetch(new Request("https://fio-polling/health"));
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             return `HTTP ${res.status} - Worker dostupny`;
           }),
           testService("worker_fio_billing", async () => {
-            const res = await fetch("https://fio-billing.bass443.workers.dev/health");
+            const res = await env.SVC_FIO_BILLING.fetch(new Request("https://fio-billing/health"));
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             return `HTTP ${res.status} - Worker dostupny`;
           }),
           testService("worker_rezervace", async () => {
-            const res = await fetch("https://rezervace.bass443.workers.dev/health");
+            const res = await env.SVC_REZERVACE.fetch(new Request("https://rezervace/health"));
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             return `HTTP ${res.status} - Worker dostupny`;
           }),
           testService("worker_image_optimizer", async () => {
-            const res = await fetch("https://image-optimizer.bass443.workers.dev/health");
+            const res = await env.SVC_IMAGE_OPTIMIZER.fetch(new Request("https://image-optimizer/health"));
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             return `HTTP ${res.status} - Worker dostupny`;
           }),
