@@ -1,0 +1,150 @@
+---
+---
+<!DOCTYPE html>
+<html lang="cs">
+<head><meta charset='UTF-8'>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Superadmin | Rezervace App</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #0f172a; color: #f1f5f9; }
+    .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 240px; background: #1e293b; border-right: 1px solid #334155; padding: 1.5rem 0; }
+    .logo { padding: 0 1.5rem 1.5rem; border-bottom: 1px solid #334155; font-weight: 700; font-size: 1.1rem; }
+    .logo span { color: #6366f1; }
+    nav { padding: 1rem 0; }
+    nav a { display: flex; align-items: center; gap: 0.75rem; padding: 0.625rem 1.5rem; color: #94a3b8; text-decoration: none; font-size: 0.9rem; transition: all 0.15s; }
+    nav a:hover, nav a.active { color: #f1f5f9; background: #334155; }
+    nav a.active { border-right: 2px solid #6366f1; }
+    .main { margin-left: 240px; padding: 2rem; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+    .header h1 { font-size: 1.5rem; }
+    .user-info { color: #94a3b8; font-size: 0.875rem; display: flex; align-items: center; gap: 1rem; }
+    .badge { background: #6366f1; color: white; padding: 0.2rem 0.6rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; }
+    .logout { color: #94a3b8; cursor: pointer; background: none; border: 1px solid #334155; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.8rem; }
+    .logout:hover { color: #f1f5f9; border-color: #64748b; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .stat { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 1.25rem; }
+    .stat-label { color: #94a3b8; font-size: 0.8rem; margin-bottom: 0.5rem; }
+    .stat-value { font-size: 1.75rem; font-weight: 700; }
+    .stat-value.green { color: #4ade80; }
+    .stat-value.yellow { color: #fbbf24; }
+    .stat-value.red { color: #f87171; }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 1.5rem; margin-bottom: 1rem; }
+    .card h2 { font-size: 1rem; margin-bottom: 1rem; color: #e2e8f0; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    th { text-align: left; color: #64748b; font-weight: 500; padding: 0.5rem 0.75rem; border-bottom: 1px solid #334155; }
+    td { padding: 0.625rem 0.75rem; border-bottom: 1px solid #1e293b; }
+    tr:hover td { background: #263348; }
+    .status { padding: 0.2rem 0.6rem; border-radius: 99px; font-size: 0.75rem; font-weight: 500; }
+    .status.active { background: #14532d; color: #4ade80; }
+    .status.trial { background: #1e3a5f; color: #60a5fa; }
+    .status.grace { background: #451a03; color: #fbbf24; }
+    .status.deactivated { background: #450a0a; color: #f87171; }
+    .loading { color: #64748b; font-size: 0.875rem; }
+  </style>
+<script src="/lang.js" is:inline></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="logo">Rezervace <span>Admin</span></div>
+        <nav>
+      <a href="/superadmin" class="active">📊 <span data-i18n="dashboard">Dashboard</span></a>
+      <a href="/superadmin/tenants">🏢 <span data-i18n="tenants">Tenanti</span></a>
+      <a href="/superadmin/users">👥 <span data-i18n="users">Uživatelé</span></a>
+      <a href="/superadmin/event-log">📋 <span data-i18n="eventLog">Event Log</span></a>
+      <a href="/superadmin/system">⚙️ <span data-i18n="systemCheck">Stav systému</span></a>
+    </nav>
+  </aside>
+  <main class="main">
+    <div class="header">
+      <h1 data-i18n="dashboard">Dashboard</h1>
+      <div class="user-info">
+        <span id="user-email" class="loading" data-i18n="loading">Načítám...</span>
+        <span class="badge">superadmin</span>
+                <div style="position:relative;display:inline-block;">
+        <button id="lang-btn" style="background:#334155;border:none;cursor:pointer;color:#f1f5f9;padding:0.3rem 0.8rem;border-radius:4px;font-size:0.8rem;font-weight:600;" onclick="document.getElementById('lang-menu').style.display=document.getElementById('lang-menu').style.display==='block'?'none':'block'">CS &#9660;</button>
+        <div id="lang-menu" style="display:none;position:absolute;right:0;top:110%;background:#1e293b;border:1px solid #334155;border-radius:6px;min-width:80px;z-index:100;">
+          <div onclick="setLang('cs');document.getElementById('lang-menu').style.display='none'" style="padding:0.5rem 1rem;cursor:pointer;color:#f1f5f9;font-size:0.85rem;">CS</div>
+          <div onclick="setLang('en');document.getElementById('lang-menu').style.display='none'" style="padding:0.5rem 1rem;cursor:pointer;color:#f1f5f9;font-size:0.85rem;">EN</div>
+        </div>
+      </div>
+        <button class="logout" onclick="logout()" data-i18n="logout">Odhlásit</button>
+      </div>
+    </div>
+    <div class="grid">
+      <div class="stat"><div class="stat-label" data-i18n="totalTenants">Celkem tenantů</div><div class="stat-value" id="stat-total">�</div></div>
+      <div class="stat"><div class="stat-label" data-i18n="active">Aktivní</div><div class="stat-value green" id="stat-active">�</div></div>
+      <div class="stat"><div class="stat-label" data-i18n="trial">Trial</div><div class="stat-value yellow" id="stat-trial">�</div></div>
+      <div class="stat"><div class="stat-label" data-i18n="deactivated">Deaktivovaní</div><div class="stat-value red" id="stat-inactive">�</div></div>
+    </div>
+    <div class="card">
+      <h2 data-i18n="lastTenants">Poslední tenanti</h2>
+      <table>
+        <thead><tr><th data-i18n="name">Název</th><th data-i18n="subdomain">Subdoména</th><th data-i18n="plan">Plán</th><th data-i18n="status">Status</th><th data-i18n="created">Vytvořen</th></tr></thead>
+        <tbody id="tenants-table"><tr><td colspan="5" class="loading" data-i18n="loading">Načítám...</td></tr></tbody>
+      </table>
+    </div>
+  </main>
+  <script>
+    const ADMIN_API_URL = "https://admin-api.bass443.workers.dev";
+
+    function getToken() {
+      const token = localStorage.getItem("sb_token");
+      if (!token) { window.location.href = "/login"; return null; }
+      return token;
+    }
+
+    async function apiFetch(path) {
+      const token = getToken();
+      if (!token) return null;
+      const res = await fetch(`${ADMIN_API_URL}${path}`, {
+        headers: { "Authorization": `Bearer ${token}` },
+      });
+      if (res.status === 401 || res.status === 403) { window.location.href = "/login"; return null; }
+      return res.json();
+    }
+
+    function logout() {
+      localStorage.removeItem("sb_token");
+      localStorage.removeItem("sb_user");
+      window.location.href = "/login";
+    }
+
+    function getLocale() { return window.getLang() === "en" ? "en-GB" : "cs-CZ"; }
+
+    async function init() {
+      const user = JSON.parse(localStorage.getItem("sb_user") || "{}");
+      if (!user.role) { window.location.href = "/login"; return; }
+      if (user.role !== "superadmin") { window.location.href = "/login"; return; }
+      document.getElementById("user-email").textContent = user.email || "";
+
+      const tenants = await apiFetch("/superadmin/tenants");
+      if (!tenants) return;
+
+      document.getElementById("stat-total").textContent = tenants.length;
+      document.getElementById("stat-active").textContent = tenants.filter(t => t.plan_status === "active").length;
+      document.getElementById("stat-trial").textContent = tenants.filter(t => t.plan_status === "trial").length;
+      document.getElementById("stat-inactive").textContent = tenants.filter(t => !t.aktivni).length;
+
+      const tbody = document.getElementById("tenants-table");
+      if (!tenants.length) {
+        tbody.innerHTML = "<tr><td colspan='5' style='color:#64748b'>" + window.t('noTenants') + "</td></tr>";
+        return;
+      }
+
+      tbody.innerHTML = tenants.slice(0, 10).map(t => `
+        <tr>
+          <td>${t.nazev}</td>
+          <td style="color:#94a3b8">${t.subdomain}</td>
+          <td style="color:#94a3b8">${t.plan}</td>
+          <td><span class="status ${t.plan_status}">${t.plan_status}</span></td>
+          <td style="color:#64748b">${new Date(t.created_at).toLocaleDateString(getLocale())}</td>
+        </tr>
+      `).join("");
+    }
+
+    init();
+  </script>
+</body>
+</html>
