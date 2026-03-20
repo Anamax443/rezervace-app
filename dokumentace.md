@@ -1,7 +1,7 @@
 # Rezervace-app – Projektová dokumentace
 
-**Verze:** 2.0
-**Datum:** 19. března 2026
+**Verze:** 2.1
+**Datum:** 20. března 2026
 **Autor:** Milan Trnka (architekt a iniciátor projektu)
 **Asistent:** Claude (Anthropic AI)
 
@@ -14,11 +14,10 @@
 3. [Databáze – Supabase](#databáze--supabase)
 4. [Cloudflare Workers](#cloudflare-workers)
 5. [Frontend – Astro](#frontend--astro)
-6. [Admin konzole – Astro](#admin-konzole--astro)
-7. [Nasazení a infrastruktura](#nasazení-a-infrastruktura)
-8. [Bezpečnost](#bezpečnost)
-9. [Rozvojový plán](#rozvojový-plán)
-10. [Přihlašovací údaje a secrets](#přihlašovací-údaje-a-secrets)
+6. [Nasazení a infrastruktura](#nasazení-a-infrastruktura)
+7. [Bezpečnost](#bezpečnost)
+8. [Rozvojový plán](#rozvojový-plán)
+9. [Přihlašovací údaje a secrets](#přihlašovací-údaje-a-secrets)
 
 ---
 
@@ -43,8 +42,7 @@
 |--------|-------------|-------|
 | Databáze | Supabase (PostgreSQL) | Data, auth, storage |
 | API Workers | Cloudflare Workers | TypeScript serverless funkce |
-| Frontend | Astro 5 + Cloudflare Pages | Zákaznický web |
-| Admin | Astro 5 + Cloudflare Pages | Admin konzole |
+| Frontend + Admin | Astro 5 + Cloudflare Pages | Zákaznický web i admin konzole v jednom projektu |
 | Email | Resend | Transakční emaily |
 | Platby | Fio banka API | QR platby a párování |
 | Repozitář | GitHub | `Anamax443/rezervace-app` |
@@ -61,20 +59,15 @@
                      │ HTTPS
 ┌────────────────────▼────────────────────────────────┐
 │            CLOUDFLARE PAGES (frontend)              │
-│              Astro 5 – SSR stránky                  │
-│  /                  – landing page (dark wine theme)│
-│  /[subdomain]       – seznam akcí tenantu           │
-│  /[subdomain]/akce/[id] – detail + rezervační form  │
-└────────────────────┬────────────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────────────┐
-│            CLOUDFLARE PAGES (admin)                 │
-│              Astro 5 – SSR stránky                  │
-│  /login             – přihlášení                    │
+│              Astro 5 – jeden projekt                │
+│  /                  – landing page + admin rozcestník│
+│  /login             – přihlášení do administrace    │
 │  /superadmin/       – dashboard, tenants, users     │
 │  /superadmin/system – health check + API klíče      │
 │  /superadmin/event-log – audit log                  │
 │  /admin/            – TODO                          │
+│  /[subdomain]       – seznam akcí tenantu           │
+│  /[subdomain]/akce/[id] – detail + rezervační form  │
 └────────────────────┬────────────────────────────────┘
                      │ fetch()
 ┌────────────────────▼────────────────────────────────┐
@@ -236,11 +229,8 @@ Worker čte klíče ze dvou zdrojů (priorita: DB > env):
 1. Načte záznamy z `system_settings` (dešifruje AES-256-GCM)
 2. Fallback na Cloudflare Worker Secrets (env proměnné)
 
-> ⚠️ TODO: `resolveApiKeys` funkce je naplánovaná, ale zatím není implementována. Workers stále čtou pouze z env.
-
 **CORS:**
 - Globální try-catch wrapper zajišťuje, že CORS hlavičky jsou vždy vráceny, i při nečekané chybě
-- Bez toho prohlížeč vidí pouze "Failed to fetch" bez detailu chyby
 
 **Auth flow:**
 1. Client posílá Bearer JWT token
@@ -303,41 +293,25 @@ thumbnail (200×150), card (800×500), hero (1600×900).
 **URL:** `https://rezervace-app.pages.dev`
 **Složka:** `frontend/`
 
+> Admin konzole je součástí tohoto projektu — sloučena ve vláknu 07 (20. 3. 2026).
+> Složka `admin/` zůstává v repozitáři jako archiv, ale není nasazována.
+
 ### Stránky
 
 | Cesta | Soubor | Popis |
 |-------|--------|-------|
-| `/` | `pages/index.astro` | Landing page (dark wine theme, #0D0B10, #C0395A) |
+| `/` | `pages/index.astro` | Landing page (dark wine theme) + nenápadný admin rozcestník |
+| `/login` | `pages/login.astro` | Přihlášení do administrace |
+| `/superadmin/` | `pages/superadmin/index.astro` | Superadmin dashboard |
+| `/superadmin/tenants` | `pages/superadmin/tenants.astro` | Správa tenantů |
+| `/superadmin/users` | `pages/superadmin/users.astro` | Správa uživatelů |
+| `/superadmin/event-log` | `pages/superadmin/event-log.astro` | Audit log |
+| `/superadmin/system` | `pages/superadmin/system.astro` | Health check + API klíče + terminál |
+| `/admin/` | `pages/admin/` | TODO — admin stránky tenantu |
 | `/[subdomain]` | `pages/[subdomain]/index.astro` | Seznam akcí tenantu |
 | `/[subdomain]/akce/[id]` | `pages/[subdomain]/akce/[id].astro` | Detail + formulář |
 
-### Environment proměnné
-
-```
-PUBLIC_SUPABASE_URL=https://arcutrsftxarurghmtqj.supabase.co
-PUBLIC_SUPABASE_ANON_KEY=<anon klíč>
-```
-
-Nastaveno v Cloudflare Pages → Settings → Environment variables. Nikdy do Gitu.
-
----
-
-## Admin konzole – Astro
-
-**Složka:** `admin/`
-**Poznámka:** Zatím nasazeno lokálně / na Pages jako samostatný projekt.
-
-### Stránky
-
-| Cesta | Soubor | Stav |
-|-------|--------|------|
-| `/login` | `login.astro` | ✅ |
-| `/superadmin/` | `superadmin/index.astro` | ✅ i18n |
-| `/superadmin/tenants` | `superadmin/tenants.astro` | ✅ i18n |
-| `/superadmin/users` | `superadmin/users.astro` | ✅ i18n |
-| `/superadmin/event-log` | `superadmin/event-log.astro` | ✅ i18n (zápis selhává) |
-| `/superadmin/system` | `superadmin/system.astro` | ✅ health + API klíče + terminál |
-| `/admin/*` | admin/*.astro | 🔲 TODO |
+> Statické routy (`/login`, `/superadmin`, ...) mají v Astru vyšší prioritu než dynamická `[subdomain]` — žádný konflikt.
 
 ### Pomocné soubory
 
@@ -355,11 +329,21 @@ Nastaveno v Cloudflare Pages → Settings → Environment variables. Nikdy do Gi
 - Jazyk uložen v `localStorage('lang')`
 - Přepínač: tlačítka CS / EN (ne vlajky — nefungují spolehlivě na Windows)
 
-### Terminálový panel (`system.astro`)
+### Admin rozcestník (index.astro)
 
-- Pravý sidebar (380px), vždy viditelný
-- Barevné výstupy: OK (zelená), CHYBA (červená), INFO (modrá), WARN (žlutá)
-- Zobrazuje výstup health checku i testů API klíčů
+Nenápadná fixní lišta dole na landing page:
+- Barva `#3D2A32` — téměř neviditelná pro náhodného návštěvníka
+- Hover: rozsvítí se na `#C0395A`
+- Odkazy: Přihlášení, Superadmin, Admin
+
+### Environment proměnné
+
+```
+PUBLIC_SUPABASE_URL=https://arcutrsftxarurghmtqj.supabase.co
+PUBLIC_SUPABASE_ANON_KEY=<anon klíč>
+```
+
+Nastaveno v Cloudflare Pages → Settings → Environment variables. Nikdy do Gitu.
 
 ---
 
@@ -391,35 +375,31 @@ rezervace-app/
 │   ├── fio-billing/
 │   ├── rezervace/
 │   └── image-optimizer/
-├── frontend/
-│   └── src/pages/
-│       ├── index.astro        # Landing page
-│       └── [subdomain]/
-│           ├── index.astro
-│           └── akce/[id].astro
-├── admin/
-│   ├── src/
-│   │   ├── lib/
-│   │   │   ├── i18n.ts
-│   │   │   └── supabase.ts
-│   │   └── pages/
-│   │       ├── login.astro
-│   │       ├── superadmin/
-│   │       │   ├── index.astro
-│   │       │   ├── tenants.astro
-│   │       │   ├── users.astro
-│   │       │   ├── event-log.astro
-│   │       │   └── system.astro
-│   │       └── admin/         # TODO
-│   └── public/
-│       ├── lang.js
-│       └── terminal.js
-├── dokumentace.md             # Tento soubor
-├── api-klice-dokumentace.md   # Správa API klíčů
-├── known_good.md              # Validované commity
-├── rezervace-app-poznatky-vlakno.md  # Technické poznatky
+├── frontend/                  # NASAZOVÁNO na Cloudflare Pages
+│   └── src/
+│       ├── lib/
+│       │   ├── i18n.ts        # Překlady CS/EN
+│       │   └── supabase.ts
+│       └── pages/
+│           ├── index.astro    # Landing page + admin rozcestník
+│           ├── login.astro    # Přihlášení
+│           ├── superadmin/    # Superadmin konzole
+│           │   ├── index.astro
+│           │   ├── tenants.astro
+│           │   ├── users.astro
+│           │   ├── event-log.astro
+│           │   └── system.astro
+│           ├── admin/         # TODO
+│           └── [subdomain]/   # Zákaznický web
+│               ├── index.astro
+│               └── akce/[id].astro
+├── admin/                     # ARCHIV — neslouží k nasazení
+├── dokumentace.md
+├── api-klice-dokumentace.md
+├── known_good.md
+├── rezervace-app-poznatky-vlakno.md
 ├── ai_development_principles.md
-└── check-api-keys.ps1         # PowerShell kontrola klíčů
+└── check-api-keys.ps1
 ```
 
 ### Cloudflare prostředky
@@ -502,12 +482,14 @@ Všechny citlivé hodnoty pouze v Cloudflare Worker Secrets. Nikdy v kódu ani `
 - [x] Worker: admin-api – test/save/load API klíčů
 - [x] Worker: admin-api – system-check (8 služeb)
 - [x] Worker: admin-api – CORS global try-catch wrapper
+- [x] Worker: admin-api – resolveApiKeys() (DB + env fallback)
 - [x] Worker: fio-polling (párování plateb + /health)
 - [x] Worker: fio-billing (billing tenantů + /health)
 - [x] Worker: rezervace (API + /health)
 - [x] Worker: image-optimizer (WebP varianty + /health)
-- [x] Frontend: landing page (dark wine theme)
+- [x] Frontend: landing page (dark wine theme) + admin rozcestník
 - [x] Frontend: seznam akcí + detail + rezervační formulář
+- [x] Admin konzole sloučena do frontendu (jeden Pages projekt)
 - [x] Admin konzole: login stránka
 - [x] Admin konzole: superadmin dashboard, tenants, users
 - [x] Admin konzole: event-log stránka
@@ -517,7 +499,6 @@ Všechny citlivé hodnoty pouze v Cloudflare Worker Secrets. Nikdy v kódu ani `
 
 ### Zbývá 🔲
 
-- [ ] `resolveApiKeys()` — worker čte klíče z DB, fallback na env
 - [ ] Event Log zápis (POST do `event_log` selhává tiše)
 - [ ] Admin konzole: admin stránky (dashboard, akce, rezervace, users)
 - [ ] Generování QR vstupenek a odesílání emailem
@@ -527,7 +508,6 @@ Všechny citlivé hodnoty pouze v Cloudflare Worker Secrets. Nikdy v kódu ani `
 - [ ] Export dat (HTML, JSON, CSV)
 - [ ] SMS notifikace (BulkGate / GoSMS.cz — future)
 - [ ] GitHub Actions – automatické testy
-- [ ] Nasazení admin frontendu na Cloudflare Pages (samostatné)
 
 ---
 
@@ -554,10 +534,13 @@ Všechny citlivé hodnoty pouze v Cloudflare Worker Secrets. Nikdy v kódu ani `
 | Cloudflare dashboard | https://dash.cloudflare.com |
 | GitHub repozitář | https://github.com/Anamax443/rezervace-app |
 | Resend dashboard | https://resend.com |
-| Frontend (prod) | https://rezervace-app.pages.dev/novak |
-| Admin konzole | https://rezervace-app.pages.dev/login (nebo samostatný Pages projekt) |
+| Frontend (prod) | https://rezervace-app.pages.dev |
+| Landing page | https://rezervace-app.pages.dev/ |
+| Demo tenant | https://rezervace-app.pages.dev/novak |
+| Admin login | https://rezervace-app.pages.dev/login |
+| Superadmin | https://rezervace-app.pages.dev/superadmin |
 
 ---
 
 *Dokumentace vytvořena: 22. února 2026*
-*Poslední aktualizace: 19. března 2026 (vlákno 06)*
+*Poslední aktualizace: 20. března 2026 (vlákno 07)*
