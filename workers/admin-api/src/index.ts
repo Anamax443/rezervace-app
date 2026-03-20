@@ -20,7 +20,22 @@ interface ResolvedKeys {
   INTERNAL_AUTH_TOKEN: string;
 }
 
+// In-memory cache — plati po dobu zivota Worker instance (~minuty)
+// Eliminuje extra DB roundtrip pri kazdem requestu
+let keysCache: ResolvedKeys | null = null;
+let keysCacheTime = 0;
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minut
+
+function invalidateKeysCache() {
+  keysCache = null;
+  keysCacheTime = 0;
+}
+
 async function resolveApiKeys(env: Env): Promise<ResolvedKeys> {
+  // Vrat cache pokud je cerstve
+  if (keysCache && (Date.now() - keysCacheTime) < CACHE_TTL_MS) {
+    return keysCache;
+  }
   const defaults: ResolvedKeys = {
     SUPABASE_SERVICE_KEY: env.SUPABASE_SERVICE_KEY,
     RESEND_API_KEY: env.RESEND_API_KEY,
@@ -48,6 +63,9 @@ async function resolveApiKeys(env: Env): Promise<ResolvedKeys> {
       }
     }
   } catch { /* DB nedostupna - keep env fallback */ }
+  // Uloz do cache
+  keysCache = defaults;
+  keysCacheTime = Date.now();
   return defaults;
 }
 
@@ -197,6 +215,8 @@ export default {
           const err = await saveRes.text();
           return new Response(JSON.stringify({ error: "DB save failed", detail: err }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
         }
+        // Invalidovat cache — novy klic musi byt nacten pri pristim requestu
+        invalidateKeysCache();
         return new Response(JSON.stringify({ status: "ok", service: body.service }), { headers: { ...cors, "Content-Type": "application/json" } });
       }
 
