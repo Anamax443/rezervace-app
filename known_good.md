@@ -36,8 +36,11 @@
 
 ## Admin konzole sloučena do frontendu
 
-✅ `9a33f33` — admin konzole sloučena do frontendu
-✅ `4dcb9c4` — admin rozcestnik na landing page
+🔲 `????????` — feat: admin konzole sloučena do frontendu (doplnit hash po commitu)
+
+## Service Bindings + Workers redeploy
+
+🔲 `????????` — feat: service bindings pro inter-worker health check (doplnit hash)
 
 ---
 

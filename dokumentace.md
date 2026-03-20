@@ -232,6 +232,16 @@ Worker čte klíče ze dvou zdrojů (priorita: DB > env):
 **CORS:**
 - Globální try-catch wrapper zajišťuje, že CORS hlavičky jsou vždy vráceny, i při nečekané chybě
 
+**Service Bindings:**
+- admin-api volá ostatní workery přes Service Bindings (přímé propojení, bez HTTP)
+- Konfigurace v `wrangler.toml` — 4 bindings: SVC_FIO_POLLING, SVC_FIO_BILLING, SVC_REZERVACE, SVC_IMAGE_OPTIMIZER
+- Důvod: Cloudflare blokuje inter-worker HTTP volání na `*.workers.dev` doménách
+
+**resolveApiKeys() cache:**
+- Klíče z DB se cachují na 5 minut (TTL) v paměti Worker instance
+- Eliminuje extra DB roundtrip při každém requestu
+- Při uložení nového klíče se cache invaliduje
+
 **Auth flow:**
 1. Client posílá Bearer JWT token
 2. Worker ověří token přes Supabase Auth `/auth/v1/user`

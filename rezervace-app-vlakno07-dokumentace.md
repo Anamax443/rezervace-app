@@ -62,6 +62,27 @@ Do `frontend/src/pages/index.astro` přidána nenápadná fixní lišta dole:
 - Hover efekt: `#C0395A`
 - Odkazy: Přihlášení → `/login`, Superadmin → `/superadmin`, Admin → `/admin`
 
+### Service Bindings — inter-worker komunikace
+
+**Problém:** admin-api worker volal ostatní workery přes HTTP (`fetch("https://fio-polling.bass443.workers.dev/health")`). Cloudflare blokuje inter-worker HTTP volání na `*.workers.dev` doménách — vracelo HTTP 404.
+
+**Řešení:** Cloudflare Service Bindings — přímé propojení workerů bez HTTP overhead.
+
+Změny:
+- `workers/admin-api/wrangler.toml` — přidány 4 `[[services]]` bloky
+- `workers/admin-api/src/auth.ts` — přidány Service Binding typy do `Env` interface
+- `workers/admin-api/src/index.ts` — system-check volá `env.SVC_*.fetch()` místo `fetch(URL)`
+
+Výsledek: 8/8 služeb OK, fio-polling 0ms latence (přímé volání).
+
+### In-memory cache pro resolveApiKeys
+
+**Problém:** Každý request načítal API klíče z DB — extra roundtrip ~120ms.
+
+**Řešení:** Cache s TTL 5 minut na úrovni Worker instance. Při `save-api-key` se cache invaliduje.
+
+Výsledek: latence tenants fetch klesla z 306ms na 186ms.
+
 ---
 
 ## 3. Živé URL po nasazení
