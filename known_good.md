@@ -36,7 +36,8 @@
 
 ## Admin konzole sloučena do frontendu
 
-🔲 `????????` — feat: admin konzole sloučena do frontendu (doplnit hash po commitu)
+✅ `9a33f33` — admin konzole sloučena do frontendu
+✅ `4dcb9c4` — admin rozcestnik na landing page
 
 ---
 
