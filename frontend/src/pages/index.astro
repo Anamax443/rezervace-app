@@ -9,15 +9,12 @@ export const prerender = true;
   <title>Rezervace App</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', sans-serif; background: #0D0B10; color: #E8E8F0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; }
-
+    body { font-family: Segoe UI, sans-serif; background: #0D0B10; color: #E8E8F0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; }
     .header { text-align: center; margin-bottom: 48px; }
     .header .logo { font-size: 40px; margin-bottom: 12px; }
     .header h1 { font-family: Georgia, serif; font-size: 28px; color: #F5E6E8; margin-bottom: 6px; }
     .header p { font-size: 13px; color: #5A3A42; }
-
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; max-width: 900px; width: 100%; margin-bottom: 48px; }
-
     .card { background: #1A1015; border: 1px solid #2A1520; border-radius: 14px; padding: 24px; text-decoration: none; color: inherit; transition: border-color 0.2s, background 0.2s; display: flex; flex-direction: column; gap: 10px; }
     .card:hover { border-color: #C0395A; background: #1F1318; }
     .card .icon { font-size: 28px; }
@@ -25,12 +22,9 @@ export const prerender = true;
     .card h2 { font-size: 17px; color: #F5E6E8; font-weight: 600; }
     .card p { font-size: 12px; color: #6B4A52; line-height: 1.6; }
     .card .arrow { font-size: 12px; color: #C0395A; margin-top: auto; padding-top: 8px; }
-
     .card.highlight { border-color: #3D1525; background: #1A0D12; }
     .card.highlight:hover { border-color: #C0395A; }
-
     .section-title { font-size: 11px; color: #3D2A32; text-transform: uppercase; letter-spacing: 0.1em; max-width: 900px; width: 100%; margin-bottom: 8px; margin-top: 8px; }
-
     .workers { display: flex; flex-wrap: wrap; gap: 10px; max-width: 900px; width: 100%; margin-bottom: 32px; }
     .worker { background: #110D14; border: 1px solid #1E1520; border-radius: 8px; padding: 10px 16px; font-size: 12px; color: #4A3A42; text-decoration: none; transition: color 0.2s, border-color 0.2s; }
     .worker:hover { color: #C0395A; border-color: #3D1525; }
@@ -38,53 +32,52 @@ export const prerender = true;
   </style>
 </head>
 <body>
-
   <div class="header">
-    <div class="logo">\uD83C\uDF77</div>
+    <div class="logo">🍷</div>
     <h1>Rezervace App</h1>
-    <p>Intern\u00ed syst\u00e9mov\u00fd rozcestu\u00edk</p>
+    <p>Interní systémový rozcestuík</p>
   </div>
 
   <div class="section-title">Administrace</div>
   <div class="grid">
     <a href="/login" class="card highlight">
-      <div class="icon">\uD83D\uDD10</div>
-      <div class="label">P\u0159ihl\u00e1\u0161en\u00ed</div>
-      <h2>P\u0159ihl\u00e1sit se</h2>
-      <p>P\u0159ihl\u00e1\u0161en\u00ed do administrace syst\u00e9mu</p>
-      <div class="arrow">/login \u2192</div>
+      <div class="icon">🔐</div>
+      <div class="label">Přihlášení</div>
+      <h2>Přihlásit se</h2>
+      <p>Přihlášení do administrace systému</p>
+      <div class="arrow">/login →</div>
     </a>
     <a href="/superadmin" class="card">
-      <div class="icon">\uD83D\uDEE1\uFE0F</div>
+      <div class="icon">🛡</div>
       <div class="label">Superadmin</div>
       <h2>Superadmin konzole</h2>
-      <p>Spr\u00e1va tenant\u016f, u\u017eivatel\u016f, syst\u00e9mov\u00fd stav</p>
-      <div class="arrow">/superadmin \u2192</div>
+      <p>Správa tenantů, uživatelů, systémový stav</p>
+      <div class="arrow">/superadmin →</div>
     </a>
     <a href="/superadmin/system" class="card">
-      <div class="icon">\uD83D\uDCCA</div>
+      <div class="icon">📊</div>
       <div class="label">Monitoring</div>
-      <h2>Stav syst\u00e9mu</h2>
-      <p>Health check 8 slu\u017eeb, API kl\u00ed\u010de, termin\u00e1l</p>
-      <div class="arrow">/superadmin/system \u2192</div>
+      <h2>Stav systému</h2>
+      <p>Health check 8 služeb, API klíče, terminál</p>
+      <div class="arrow">/superadmin/system →</div>
     </a>
     <a href="/admin" class="card">
-      <div class="icon">\uD83C\uDFE2</div>
+      <div class="icon">🏢</div>
       <div class="label">Admin tenantu</div>
       <h2>Admin konzole</h2>
-      <p>Spr\u00e1va akc\u00ed, rezervac\u00ed a u\u017eivatel\u016f tenantu</p>
-      <div class="arrow">/admin \u2192</div>
+      <p>Správa akcí, rezervací a uživatelů tenantu</p>
+      <div class="arrow">/admin →</div>
     </a>
   </div>
 
-  <div class="section-title">Z\u00e1kazn\u00edck\u00fd web</div>
+  <div class="section-title">Zákaznícký web</div>
   <div class="grid">
     <a href="/novak" class="card">
-      <div class="icon">\uD83C\uDF77</div>
+      <div class="icon">🍷</div>
       <div class="label">Demo tenant</div>
-      <h2>Vinot\u00e9ka Nov\u00e1k</h2>
-      <p>Uk\u00e1zkov\u00fd tenant — seznam akc\u00ed, rezervace, platba</p>
-      <div class="arrow">/novak \u2192</div>
+      <h2>Vinotéka Novák</h2>
+      <p>Ukázkový tenant — seznam akcí, rezervace, platba</p>
+      <div class="arrow">/novak →</div>
     </a>
   </div>
 
@@ -96,6 +89,5 @@ export const prerender = true;
     <a href="https://rezervace.bass443.workers.dev/health" target="_blank" class="worker"><span>GET</span>rezervace /health</a>
     <a href="https://image-optimizer.bass443.workers.dev/health" target="_blank" class="worker"><span>GET</span>image-optimizer /health</a>
   </div>
-
 </body>
 </html>
