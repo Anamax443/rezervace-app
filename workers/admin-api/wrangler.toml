@@ -5,3 +5,20 @@ compatibility_flags = ["nodejs_compat"]
 
 [vars]
 SUPABASE_URL = "https://arcutrsftxarurghmtqj.supabase.co"
+
+# Service Bindings — prime propojeni workerů bez HTTP
+[[services]]
+binding = "SVC_FIO_POLLING"
+service = "fio-polling"
+
+[[services]]
+binding = "SVC_FIO_BILLING"
+service = "fio-billing"
+
+[[services]]
+binding = "SVC_REZERVACE"
+service = "rezervace"
+
+[[services]]
+binding = "SVC_IMAGE_OPTIMIZER"
+service = "image-optimizer"

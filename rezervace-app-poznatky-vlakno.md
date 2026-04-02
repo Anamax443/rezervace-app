@@ -1,5 +1,5 @@
 # Rezervace App — Poznatky z vývoje
-## Shrnutí zkušeností ze všech vláken (Feb–Mar 2026)
+## Shrnutí zkušeností z vlákna (Feb 2026)
 
 ---
 
@@ -14,32 +14,26 @@ Výsledkem jsou znaky `\ufffd` (Unicode replacement character) nebo `??` v HTML.
 | Úkol | Nástroj | Poznámka |
 |------|---------|----------|
 | Zápis nových souborů s češtinou | Node .cjs s `\uXXXX` | Žádná přímá čeština v kódu |
-| Oprava existujících souborů | Python skript (uložit do souboru, pak spustit) | Spolehlivé UTF-8 |
-| Ověření obsahu souboru | `python -c "print(open(...)...)"` | Terminál zobrazuje špatně, soubor je OK |
+| Oprava existujících souborů | Python `-c` nebo Python skript | Spolehlivé UTF-8 |
+| Ověření obsahu souboru | Python `-c "print(open(...)...)"` | Terminál zobrazuje špatně, soubor je OK |
 
 ### Příklady
 
-**Zápis přes Node .cjs (preferovaný způsob):**
+**Zápis přes Node .cjs:**
 ```javascript
 // fix.cjs
 const fs = require('fs');
-// Pole řetězců joined s \n — nejspolehlivější varianta
-const lines = [
-  'N\u00e1zev souboru',
-  'Dal\u0161\u00ed \u0159\u00e1dek',
-];
-fs.writeFileSync('output.txt', lines.join('\n'), 'utf8');
+const content = 'N\u00e1zev, P\u0159\u00edpadov\u00e1 studie';
+fs.writeFileSync('output.txt', content, 'utf8');
 ```
 
-**Oprava přes Python (uložit do .py souboru, pak spustit):**
-```python
-# fix.py
+**Oprava přes Python:**
+```powershell
+python -c "
 c = open('soubor.astro', encoding='utf-8').read()
 c = c.replace('\ufffdN\ufffdzev', 'Název')
 open('soubor.astro', 'w', encoding='utf-8').write(c)
-```
-```powershell
-python fix.py
+"
 ```
 
 **Ověření obsahu:**
@@ -47,70 +41,72 @@ python fix.py
 python -c "print(open('soubor.astro', encoding='utf-8').read()[:300])"
 ```
 
-### Klíčová zjištění
+### Klíčové zjištění
 - Terminál (`type`, PowerShell výstup) zobrazuje UTF-8 špatně — to NEZNAMENÁ že soubor je poškozený
 - Python `print()` zobrazuje správně
-- **Inline Python v PowerShell (-c) selhává** — vždy zapisovat Python do dočasného souboru a spouštět
-- Node.js `-e` inline příkazy selhávají při složitých string escape sekvencích — vždy `.cjs` soubor
 - Soubory zapsané přes Node .cjs s `\uXXXX` jsou vždy správně UTF-8
 
 ---
 
-## 2. Template literals v TypeScript / JavaScript — ZÁKEŘNÁ CHYBA
+## 2. i18n — Vícejazyčnost
 
-### Problém
-Backticky musí obalovat celou template literal hodnotu, ne být zanořeny do property names:
+### Architektura
+- `src/lib/i18n.ts` — slovník překladů (CS, EN, snadno rozšiřitelné)
+- `public/lang.js` — runtime překlady v prohlížeči
+- `data-i18n="klic"` atribut na HTML elementech
+- `window.t('klic')` pro dynamický JS obsah
+- Jazyk uložen v `localStorage('lang')`
 
+### Přepínač jazyka
+```html
+<button onclick="setLang('cs')">CS</button>
+<button onclick="setLang('en')">EN</button>
+```
+- Vlajky emoji nefungují spolehlivě na Windows — použít text CS/EN
+- `setLang()` volá `location.reload()` pro překreslení stránky
+
+### Dynamický obsah (JS generated)
+```javascript
+// Místo hardcoded češtiny:
+tbody.innerHTML = '<tr><td>Žádné záznamy</td></tr>';
+
+// Použít:
+tbody.innerHTML = '<tr><td>' + t('noData') + '</td></tr>';
+```
+
+### Přidání nového jazyka
+Do `src/lib/i18n.ts` přidat blok:
 ```typescript
-// ŠPATNĚ — backticky jsou uvnitř property name → worker padá
-const headers = {
-  "Authorization`: Bearer ${token}, `apikey": token
-}
-
-// SPRÁVNĚ
-const headers = {
-  "Authorization": `Bearer ${token}`,
-  "apikey": token
+sk: {
+  dashboard: 'Dashboard',
+  tenants: 'Nájomníci',
+  // ...
 }
 ```
 
-### Projev
-Worker padá při každém requestu. Prohlížeč vidí pouze "Failed to fetch" — bez detailu. Proto je nutný CORS global try-catch (viz níže).
-
 ---
 
-## 3. CORS — global try-catch wrapper
+## 3. Nasazení admin-api Worker (Cloudflare)
 
-### Problém
-Pokud worker hodí výjimku před odesláním response, prohlížeč dostane síťovou chybu bez CORS hlaviček. Výsledek: "Failed to fetch" — bez jakéhokoli detailu.
-
-### Řešení — obalit celý handler
-
-```typescript
-export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
-    try {
-      return await handleRequest(request, env);
-    } catch (e: any) {
-      // Vždy vrátit CORS hlavičky, i při nečekané chybě
-      return new Response(JSON.stringify({ error: e.message }), {
-        status: 500,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        }
-      });
-    }
-  }
-}
+### Postup
+```powershell
+cd workers/admin-api
+npm install
+npx wrangler secret put SUPABASE_SERVICE_KEY
+npx wrangler secret put INTERNAL_AUTH_TOKEN
+npx wrangler deploy
 ```
 
-### Poučení
-Tento wrapper je povinný ve všech workerech. Bez něj je debugging v prohlížeči slepý.
+### Ověření
+```powershell
+curl https://admin-api.bass443.workers.dev/health
+```
 
----
-
-## 4. Supabase Auth — správné použití JWT tokenu
+### Auth flow
+1. Client posílá Bearer JWT token
+2. Worker ověří token přes Supabase Auth `/auth/v1/user`
+3. Načte profil z tabulky `profiles` pomocí **uživatelova JWT** (ne service key!)
+4. RLS politiky vyžadují správné `auth.uid()` — service key ho nesetuje
 
 ### Kritická oprava
 ```typescript
@@ -118,15 +114,24 @@ Tento wrapper je povinný ve všech workerech. Bez něj je debugging v prohlíž
 headers: { "Authorization": `Bearer ${env.SUPABASE_SERVICE_KEY}` }
 
 // SPRÁVNĚ — uživatelův token setuje auth.uid()
-headers: { "Authorization": `Bearer ${userJwtToken}` }
+headers: { "Authorization": `Bearer ${token}` }
 ```
 
-Service key obchází RLS (to je záměr pro zápisy), ale pro čtení dat uživatele je nutný jeho vlastní JWT — jinak RLS políčka selhávají.
+---
 
-### JWT platnost
-- Supabase JWT platí **1 hodinu** (3600 sekund)
-- Uložen v `localStorage` pod klíčem `sb_token`
-- Po expiraci nutné nové přihlášení
+## 4. Supabase — nastavení hesla
+
+### Přes SQL Editor (pokud chybí tlačítko v UI)
+```sql
+UPDATE auth.users
+SET encrypted_password = crypt('NoveHeslo123!', gen_salt('bf'))
+WHERE id = 'uuid-uzivatele';
+```
+
+### Nový formát Supabase klíčů
+- Anon key nyní začíná `sb_pub...` (ne `eyJ...`)
+- Service key začíná `sb_sec...`
+- `import.meta.env` nefunguje v inline `<script>` tagu v Astro — použít hardcoded hodnoty nebo `<script is:inline>`
 
 ---
 
@@ -134,169 +139,47 @@ Service key obchází RLS (to je záměr pro zápisy), ale pro čtení dat uživ
 
 ### Inline skripty
 ```html
-<!-- NE — Astro bundluje script, import.meta.env nefunguje -->
+<!-- Takhle NE — Astro bundluje script a import.meta.env nefunguje -->
 <script src="/lang.js"></script>
 
-<!-- ANO — is:inline zabraňuje bundlování -->
+<!-- Takhle ANO — is:inline zabraňuje bundlování -->
 <script src="/lang.js" is:inline></script>
 ```
 
 ### Event listenery
 ```javascript
-// NE — onclick nefunguje v Astro kompilovaných stránkách
+// Takhle NE — onclick="login()" nefunguje když je funkce v <script> tagu
 <button onclick="login()">
 
-// ANO — addEventListener vždy funguje
+// Takhle ANO
 <button id="btn">
 document.getElementById("btn").addEventListener("click", login);
 ```
 
-### Supabase nový formát klíčů
-- Anon key: `sb_pub...` (ne `eyJ...`)
-- Service key: `sb_sec...`
-
 ---
 
-## 6. AES-256-GCM šifrování (`crypto.ts`)
-
-### Přehled
-```typescript
-// Generování master klíče (jednou, uložit jako Worker Secret)
-const key = crypto.getRandomValues(new Uint8Array(32));
-// nebo: node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
-
-// Šifrování
-async function encrypt(plaintext: string, base64Key: string): Promise<{encrypted: string, iv: string}>
-
-// Dešifrování
-async function decrypt(encrypted: string, iv: string, base64Key: string): Promise<string>
-```
-
-### Důležité
-- IV je náhodný a unikátní pro každý záznam — nikdy neopakovat
-- Bez `ENCRYPTION_KEY` jsou záznamy v `system_settings` nečitelné
-- Při ztrátě klíče: přegenerovat `ENCRYPTION_KEY` + znovu uložit všechny API klíče
-
----
-
-## 7. i18n — Vícejazyčnost
-
-### Architektura
-- `src/lib/i18n.ts` — slovník překladů (CS, EN, server-side)
-- `public/lang.js` — runtime překlady v prohlížeči
-- `data-i18n="klic"` atribut na HTML elementech
-- `window.t('klic')` pro dynamický JS obsah
-- Jazyk uložen v `localStorage('lang')`
-
-### Dynamický obsah (JS generated)
-```javascript
-// NE — hardcoded čeština
-tbody.innerHTML = '<tr><td>Žádné záznamy</td></tr>';
-
-// ANO — přes t()
-tbody.innerHTML = '<tr><td>' + window.t('noData') + '</td></tr>';
-```
-
-### Locale pro formátování dat
-```javascript
-function getLocale() { return window.getLang() === "en" ? "en-GB" : "cs-CZ"; }
-const locale = getLocale();
-new Date(ts).toLocaleDateString(locale);
-```
-
----
-
-## 8. Fio banka — specifika
-
-### Rate limit
-- 1 request / 30 sekund
-- HTTP 409 = rate limit (ne chyba tokenu!)
-- Při rate limitu počkat 30s a zkusit znovu
-
-### Token expirace
-- Token může expirovat tiše — bez varování
-- Při expiraci: HTTP 409 nebo prázdná odpověď
-- Kontrolovat pravidelně (ideálně denně přes `check-api-keys.ps1`)
-- Po expiraci: nový token v Fio IB → aktualizovat ve všech workerech
-
----
-
-## 9. Cloudflare Workers — health endpointy
-
-### Povinný pattern pro všechny workers
-```typescript
-if (url.pathname === '/health') {
-  return new Response(JSON.stringify({
-    status: 'ok',
-    worker: 'nazev-workeru',
-    timestamp: new Date().toISOString()
-  }), {
-    headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*'
-    }
-  });
-}
-```
-
-Všechny 4 workers (fio-polling, fio-billing, rezervace, image-optimizer) mají `/health` endpoint od vlákna 05b.
-
----
-
-## 10. Git workflow — povinný postup
-
-```powershell
-git add <soubory>
-git commit --allow-empty -m "typ: popis zmeny"
-git push
-git log --oneline -3
-```
-
-- `--allow-empty` zajistí commit i když nejsou změny — předejde chybě "nothing to commit"
-- Hash z `git log` zapsat do `known_good.md` po ověření funkčnosti
-- Dokumentaci vždy aktualizovat před commitem
-
-### Typy commitů
-- `feat:` — nová funkcionalita
-- `fix:` — oprava chyby
-- `docs:` — pouze dokumentace
-- `wip:` — rozpracováno (do finálního commitu přepsat)
-
----
-
-## 11. Supabase free tier — limity
-
-- 2 aktivní projekty per organizace
-- Projekty se pauzují po 1 týdnu bez aktivity
-- Ochrana: fio-polling cron každých 5 minut = trvalá aktivita
-- Pro nové systémy/agendy: nová Supabase organizace (stejný GitHub účet `Anamax443`)
-
----
-
-## 12. Projekt — aktuální stav (Mar 2026)
+## 6. Projekt — aktuální stav
 
 ### Hotovo ✅
 - Databáze migrace v2.0 (Supabase)
-- Tabulka `system_settings` pro šifrované API klíče
-- Worker `admin-api` — nasazen, všechny endpointy funkční
-- Worker `admin-api` — AES-256-GCM crypto modul
-- Worker `admin-api` — CORS global try-catch wrapper
-- Health endpointy na všech 5 workerech
-- Astro admin konzole — všechny superadmin stránky
-- `system.astro` — health check + API klíče + terminálový panel
-- i18n CS/EN (kompletní)
-- Landing page (dark wine theme, #0D0B10, #C0395A)
-- API klíče Supabase + Resend uloženy šifrovaně v DB
+- Worker `admin-api` nasazený na Cloudflare Workers
+- Astro admin konzole — login stránka
+- Superadmin dashboard, tenants, users, event-log
+- i18n CS/EN s přepínačem jazyků
 
 ### Rozpracováno / TODO
-- `resolveApiKeys()` — worker čte klíče z DB (fallback na env)
-- Event Log zápis selhává tiše (POST do `event_log`)
-- Admin a Keyuser konzole stránky
-- Filtrace sloupců + export (HTML, JSON, CSV)
-- Ověření domény bass443.com v Resend
+- Dynamické překlady v JS generovaném obsahu (noData, noUsers, noTenants)
+- Filtrace sloupců na všech stránkách
+- Export dat (HTML, JSON, CSV)
+- Admin a Keyuser konzole
+- Nasazení admin frontendu na Cloudflare Pages
+
+### Technologie
+- **Backend:** Cloudflare Workers (TypeScript), Supabase (PostgreSQL + Auth)
+- **Frontend:** Astro 5 + Cloudflare adapter
+- **Dev:** Node.js 24, Python 3.14, PowerShell 7
 
 ---
 
 *Dokument vytvořen: 22. února 2026*
-*Poslední aktualizace: 19. března 2026 (vlákno 06)*
 *Projekt: rezervace-app (github.com/Anamax443/rezervace-app)*

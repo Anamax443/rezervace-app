@@ -12,6 +12,11 @@ export interface Env {
   RESEND_API_KEY: string;
   ENCRYPTION_KEY: string;
   FIO_PLATFORM_TOKEN: string;
+  // Service Bindings — prime volani workers bez HTTP
+  SVC_FIO_POLLING: { fetch: (req: Request) => Promise<Response> };
+  SVC_FIO_BILLING: { fetch: (req: Request) => Promise<Response> };
+  SVC_REZERVACE: { fetch: (req: Request) => Promise<Response> };
+  SVC_IMAGE_OPTIMIZER: { fetch: (req: Request) => Promise<Response> };
 }
 
 export async function verifyAuth(request: Request, env: Env): Promise<{ user: AuthUser } | { error: string; status: number }> {

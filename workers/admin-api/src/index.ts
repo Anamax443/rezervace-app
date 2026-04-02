@@ -20,7 +20,22 @@ interface ResolvedKeys {
   INTERNAL_AUTH_TOKEN: string;
 }
 
+// In-memory cache — plati po dobu zivota Worker instance (~minuty)
+// Eliminuje extra DB roundtrip pri kazdem requestu
+let keysCache: ResolvedKeys | null = null;
+let keysCacheTime = 0;
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minut
+
+function invalidateKeysCache() {
+  keysCache = null;
+  keysCacheTime = 0;
+}
+
 async function resolveApiKeys(env: Env): Promise<ResolvedKeys> {
+  // Vrat cache pokud je cerstve
+  if (keysCache && (Date.now() - keysCacheTime) < CACHE_TTL_MS) {
+    return keysCache;
+  }
   const defaults: ResolvedKeys = {
     SUPABASE_SERVICE_KEY: env.SUPABASE_SERVICE_KEY,
     RESEND_API_KEY: env.RESEND_API_KEY,
@@ -48,6 +63,9 @@ async function resolveApiKeys(env: Env): Promise<ResolvedKeys> {
       }
     }
   } catch { /* DB nedostupna - keep env fallback */ }
+  // Uloz do cache
+  keysCache = defaults;
+  keysCacheTime = Date.now();
   return defaults;
 }
 
@@ -94,22 +112,23 @@ export default {
             return `HTTP ${res.status} - Fio dostupne`;
           }),
           testService("worker_fio_polling", async () => {
-            const res = await fetch("https://fio-polling.bass443.workers.dev/health");
+            // Service Binding — prime volani bez HTTP overhead
+            const res = await env.SVC_FIO_POLLING.fetch(new Request("https://fio-polling/health"));
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             return `HTTP ${res.status} - Worker dostupny`;
           }),
           testService("worker_fio_billing", async () => {
-            const res = await fetch("https://fio-billing.bass443.workers.dev/health");
+            const res = await env.SVC_FIO_BILLING.fetch(new Request("https://fio-billing/health"));
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             return `HTTP ${res.status} - Worker dostupny`;
           }),
           testService("worker_rezervace", async () => {
-            const res = await fetch("https://rezervace.bass443.workers.dev/health");
+            const res = await env.SVC_REZERVACE.fetch(new Request("https://rezervace/health"));
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             return `HTTP ${res.status} - Worker dostupny`;
           }),
           testService("worker_image_optimizer", async () => {
-            const res = await fetch("https://image-optimizer.bass443.workers.dev/health");
+            const res = await env.SVC_IMAGE_OPTIMIZER.fetch(new Request("https://image-optimizer/health"));
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             return `HTTP ${res.status} - Worker dostupny`;
           }),
@@ -197,6 +216,8 @@ export default {
           const err = await saveRes.text();
           return new Response(JSON.stringify({ error: "DB save failed", detail: err }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
         }
+        // Invalidovat cache — novy klic musi byt nacten pri pristim requestu
+        invalidateKeysCache();
         return new Response(JSON.stringify({ status: "ok", service: body.service }), { headers: { ...cors, "Content-Type": "application/json" } });
       }
 

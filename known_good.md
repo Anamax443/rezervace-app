@@ -34,6 +34,14 @@
 
 ✅ `57c41e8` — i18n dynamické překlady, oprava hardcoded textů, locale
 
+## Admin konzole sloučena do frontendu
+
+🔲 `????????` — feat: admin konzole sloučena do frontendu (doplnit hash po commitu)
+
+## Service Bindings + Workers redeploy
+
+🔲 `????????` — feat: service bindings pro inter-worker health check (doplnit hash)
+
 ---
 
 ## Stav secrets (admin-api worker)
@@ -58,4 +66,5 @@
 ---
 
 *Soubor vytvořen: 19. března 2026 (vlákno 06)*
+*Poslední aktualizace: 20. března 2026 (vlákno 07)*
 *Projekt: rezervace-app (github.com/Anamax443/rezervace-app)*
